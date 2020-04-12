@@ -1,0 +1,101 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage{geometry}
+\parindent 0pt
+\parskip 5pt
+\pagestyle{plain}
+
+\title{\textsc{Consensus}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+
+\section{Motivation}
+
+Achieving agreement among remote processes (where some may be faulty) is a
+fundamental problem in distributed computing \cite{fischer1985impossibility}.
+This problem is known as \textit{consensus} and lies ``at the core of many
+algorithms for distributed data processing, distributed file management, and
+fault tolerant distributed applications.'' \cite{fischer1985impossibility}
+
+
+\section{Formal definition}
+TBC
+
+
+\section{Impossibility of consensus}
+
+It has been shown that in an asynchronous system of processes, ``every protocol
+for this problem has the possibility of nontermination, even with only one
+faulty process.'' \cite{fischer1985impossibility}
+
+
+\section{Relevant problems}
+
+\subsection{Reliable Multicast}
+
+Ensuring that all processes receive updates in the same order.
+
+\subsection{Membership/Failure Detection}
+
+Ensuring that every process has a local record containing every other process.
+Failures should be detected and records should be updated.
+
+\subsection{Leader Election}
+
+Deciding on a leader among all processes, with all processes being aware of
+who the leader is.
+
+\subsection{Mutual Exclusion}
+
+Ensuring that simultaneous access to a resource does not occur (exclusive
+access).
+
+
+\section{Paxos algorithm}
+
+\subsection{Roles}
+
+A process can take more than one role.
+
+A process is \textit{persistent}---it cannot forget what it has accepted.
+
+  \subsubsection{Proposer}
+
+  \subsubsection{Acceptor}
+
+  \subsubsection{Learner}
+
+\subsection{Protocol}
+
+\subsection{Issues}
+
+  \subsubsection{Contention}
+
+\subsection{Optimisations}
+
+
+
+\section{Raft algorithm}
+
+\subsection{Roles}
+
+\subsection{Issues}
+
+\subsection{Optimisations}
+
+
+\section{Comparative analysis}
+
+
+\section{Application}
+
+
+
+
+\bibliographystyle{ieeetr}
+\bibliography{main}
+
+\end{document}
