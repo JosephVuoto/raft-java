@@ -51,6 +51,8 @@ coverage
 *.bbl
 *.blg
 *.dvi
+*.fdb_latexmk
+*.fls
 *.glg
 *.gls
 *.ilg
@@ -62,3 +64,6 @@ coverage
 *.mtc1
 *.out
 *.synctex.gz
+
+### Rendered PDF ###
+report/main.pdf
