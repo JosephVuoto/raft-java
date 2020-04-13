@@ -64,6 +64,7 @@ coverage
 *.mtc1
 *.out
 *.synctex.gz
+*.xdv
 
 ### Rendered PDF ###
 report/main.pdf
