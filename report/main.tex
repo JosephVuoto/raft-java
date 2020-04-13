@@ -1,5 +1,6 @@
 \documentclass[12pt, a4paper]{article}
 \usepackage{geometry}
+\usepackage{diagbox}
 \parindent 0pt
 \parskip 5pt
 \pagestyle{plain}
@@ -21,18 +22,46 @@ algorithms for distributed data processing, distributed file management, and
 fault tolerant distributed applications.'' \cite{fischer1985impossibility}
 
 
-\section{Formal definition}
-TBC
+\section{Formal Definition}
+\subsection{Consensus Problem}
+Due to problems such as unreliable network communication between nodes and node failures, it is difficult to achieve consistency between nodes in distributed computing or multi-agent systems. In a consensus problem \cite{coulouris2005distributed}, every process $p_{i}$ proposes a single value $v_{i}$ in the \textit{undecided} state, drawn from a set $D(i = 1,2,...,N)$. Then processes exchange values with each other through message passing. After that, each process would set their decision variable, $d_{i}$ based on the information they gained from other processes. In doing so, they enter the \textit{decided} state, in which $d_{i} (i = 1, 2, ..., N)$ may not be changed. The requirement of the problem is to come up with a protocol or algorithm so that the following conditions should be satisfied for every execution:
+\begin{itemize}
+	\item \textbf{Termination}: All non-faulty process must set its decision variable eventually.
+	\item \textbf{Agreement}: All the non-faulty processes in the decided state must have the same value, which means that if $p_{i}$ and $p_{j}$ are correct and have entered the decided state, then $d_{i} = d_{j}(i, j = 1, 2, ..., N)$.
+	\item \textbf{Integrity/Validity}: If all the non-faulty processes proposed the same value, then the agreed upon decision value by all the non-faulty processes must be that same value.
+\end{itemize}
+There are two other problem similar to the concensus problem - the Byzantine agreement problem, and the interactive consistency problem. The differences between them are shown on table \ref{tab:dbtap}. Even tough the requirement details of them are different, a solution to any one of them can be transformed to the other two problems by reduction \cite{fischer1983consensus}. 
+
+\begin{table}[htp]
+\centering
+\begin{tabular}{|l|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+Conditions  & Consensus Problem & Byzantine Generals Problem& Interactive Consistency Problem \\ \hline
+Termination & Eventually decide on \textbf{a value} & Eventually decide on \textbf{a value} & Eventually decide on the \textbf{array A} \\ \hline
+Agreement   & Agree on \textbf{the same value} & Agree on \textbf{the same value} & Agree on \textbf{the same array of values $A[v_{1}...v_{n}]$} \\ \hline
+Integrity 	& The decision value is based on \textbf{all the correct processes's propositions} &  If \textbf{the commander} is correct, then all correct processes decide on the value that \textbf{commander proposed} & All correct processes decide on $v_{i}$ as the ${i}$th component of their \textbf{vector}, if $p_{i}$ is correct \\ \hline
+\end{tabular}
+\caption{Differences Between Tree Similar Problems}
+\label{tab:dbtap}
+\end{table}
+
+\subsection{Different Model of Distributed System}
+The difficulty of solving consensus problem under different system models and assumptions are varied. There are two most popular system models in distributed systems - the Synchronous System Model and the Asynchronous System Model. In the Synchronous System Model, there is a bound on how long a message takes to be delivered, which means each message is received within bounded time as long as the sender and recipient processes are alive. The drift of each processes' local clock has a known bound. Each step in a process takes a time that is lower bounded by a known value and upper bound by a known value. The bound is a global bound across the entire state system. E.g., a collection of processors connected by a communication bus. The Asynchronous System Model on the other hand does not have any bound on anything. There is no bounds on process execution and message transmission delays. The drift rate of a clock might be arbitrarily fast or arbitrarily slow. This is a more general model than the Synchronous system model, which also means the consensus problem is more difficult to be solved in this model. An algorithm work for an asynchronous system will also work for a synchronous system. Lots of the very widely used distributed systems adhere to it. In the Synchronous System Model, the consensus problem is solvable. However, the consensus is impossible to solve in the Asynchronous System model \cite{fischer1985impossibility}. Whatever what protocol or algorithm is provided, there is always a worst-case possible execution scenario where some processes fail, and some messages are delayed, which would prevent the system from reaching consensus.
 
 
-\section{Impossibility of consensus}
+\subsection{Consensus Algorithm}
+Many problems in distributed systems are closely bound up with consensus, which makes finding effective solutions to consensus problem become significant. 
 
-It has been shown that in an asynchronous system of processes, ``every protocol
-for this problem has the possibility of nontermination, even with only one
-faulty process.'' \cite{fischer1985impossibility}
+
+%% May be needed in the future.
+% \section{Impossibility of consensus}
+% It has been shown that in an asynchronous system of processes, ``every protocol
+% for this problem has the possibility of nontermination, even with only one
+% faulty process.'' \cite{fischer1985impossibility}
 
 
 \section{Relevant problems}
+
 
 \subsection{Reliable Multicast}
 
