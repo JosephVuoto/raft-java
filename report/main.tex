@@ -234,38 +234,44 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 
 
 \section{Raft algorithm}
-Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
+The Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
 understandable and easier to implement a practical system. The highlight of the Raft algorithm is that it adopts an
 engineering thinking --- It simplifies the model of the design according to the requirements in practical applications and
 modularizes the process of the algorithm. From the perspective of performance and security, the Raft algorithm is also almost
 the same as Paxos.
 \subsection{Roles}
   \subsubsection{Follower}
-  All nodes are followers when they are just started. The followers are completely passive, the can only respond to the incoming
+  All nodes are followers when they are started. The followers are completely passive, they can only respond to the incoming
   messages. If the client's message is sent to a follower, the message will be redirected to the leader of this cluster. Followers may
   also be able to become a leader through elections under certain conditions.
   \subsubsection{Leader}
   There can be only one Leader in the entire cluster at the same time. The leader handles all client interactions.
   \subsubsection{Candidate}
-  The candidate is a state between follower and leader. When a follower becomes a candidate, an election will be held. The candidate
-  who wins the election will be the new leader.
+  The candidate state is a state between the follower state and the leader state. When a follower becomes a candidate, an election 
+  will be held. The candidate who wins the election will be the new leader.
 \subsection{Protocol}
-In the Raft algorithm, time is divided into terms, Each term has a number, and the number increments with a new term. Each term starts
+In the Raft algorithm, time is divided into terms, Each term has a number, and the number increments when a new term starts. Each term starts
 with an election. If the election is successful, then the chosen leader will serve out for the rest of the term, which means that
 only one leader can be elected in a given term. If the election is not successful, then the candidate starts a new term. Each node
-in the cluster maintains the value of the current term and it should be stored reliably. The function of the term and term number is
+in the cluster maintains the value of the current term number and it should be stored reliably. The function of the term and term number is
 to allow the nodes to identify the information that is out of date.
 \par
 In order to let the followers believe there is an active leader in the cluster, followers expect to receive heartbeat messages from
 the leader regularly. If the follower's timeout of heartbeat message elapses, it assumes that the leader crashed and will start a
 new election. This timeout is often much longer than the propagation time of the message in the network.
+\par
+There are only two type of RPCs in the Raft algorithm:
+\begin{itemize}
+  \item \textbf{RequestVote RPC}: invoked by candidates to gather votes from other nodes.
+  \item \textbf{AppendEntries RPC}: invoked by the leader to replicate log entries.
+\end{itemize}
   \subsubsection{Leader Election}
   When a node begins an election, the first thing it does is to increment its current term number. The node then converts itself from
   follower state to candidate state. To win the election, the node must receive votes from a majority of nodes in the cluster. The node
-  votes for itself, then send a message for requesting votes to all other nodes and retry this process until:
+  votes for itself, then send RequestVote RPCs to all other nodes and retry this process until:
   \begin{itemize}
-    \item It received votes from majority of nodes in the cluster, which means it wins the election and becomes the leader.
-    \item It received message from a leader, which means one of other candidates wins the election, the current node becomes a follower.
+    \item It receives votes from majority of nodes in the cluster, which means it wins the election and becomes the leader.
+    \item It receives a RPC from a leader, which means one of other candidates wins the election, the current node becomes a follower.
     \item Election timeout elapses, which means no one wins the election. The node will then increment the term number and start a new election
   \end{itemize}
   \par
@@ -273,6 +279,33 @@ new election. This timeout is often much longer than the propagation time of the
   the majority in the same term, thus only one candidate can win the election. Also, to prevent live lock of the election, the election
   timeout of each node is chosen randomly.
   \subsubsection{Log Replication}
+  Once a leader is elected, it receives all client's request messages. These messages contain a command to be executed by the replicated
+  state machine. The leader creates a log entry for each request from the clients. Apart from commands, the log entry also contains an index
+  number in the log and a term number when the log entry was first created. Each log entry is committed if known to be stored in the logs of
+  the majority of the nodes.
+  \par
+  When the leader receives a command from a client, it appends the command with the current term number and index number to its log. Then the leader
+  sends AppendEntries RPCs to all followers. Once a new log entry is committed, the leader passes the command to its state machine and
+  notifies all followers of this new log entry. When the followers receive these RPCs, they pass the command to their state machine.
+  \par
+  To ensure consistency of logs, each AppendEntries RPC contains the index and the term of the previous log entry. The followers who receives the RPC will
+  reject the request if they do not have a matching log entry. It then is guaranteed that a new entry is only accepted if the logs match in
+  their previous entry. So if a given log entry is committed, its all previous log entries are also committed.
+  \par
+  At the beginning of a new leader's term, the old leaders may have left some log entries that are partially replicated. The way that the Raft
+  algorithm used to solve this problem is to force all follower to duplicate its log, which will also force all follower to discard all the
+  inconsistent log entries and fill in all missing log entries. The leader maintains a value nextIndex for each follower, which marks the index
+  of the next log entry to send to that follower. When AppendEntries consistency check fails, it decrements the nextIndex and retries until the
+  follower's log is repaired.
+  \subsubsection{Safety}
+  If a leader has decided that a log entry is committed, then that entry should be present in the logs of all future leaders. To guarantee this,
+  the algorithm picks the candidate to win the election such that it has the log that is most likely to have all the entries that have been
+  committed. So the candidates must include log info in RequestVote RPCs including index and term of the last log entry. And the voting servers
+  have to deny if its log is more complete.
+  \par
+  Another safety issue is that if a leader crashes while replicating logs, the new leader will not know whether the last log entry of the
+  previous leader has been committed or not. To solve this problem, a new commitment rule must apply --- For a leader to decide an entry
+  is committed, in addition to the previous rule, at least one new entry from leader's term must also be stored on the majority of servers.
 \subsection{Issues}
 
 \subsection{Optimisations}
