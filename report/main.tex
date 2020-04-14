@@ -115,61 +115,81 @@ impossible for an algorithm to provide more than two of these three properties:
 
 \subsection{Models of Computation}
 
-The difficulty of solving consensus problem under different system models and
-assumptions are varied. Each consensus algorithm has its assumptions about the
-problem, and we need to classify and compare based on their assumptions about
-the problem.
+Solving the consensus problem varies in difficulty depending on the system model
+being considered. Different models assert different assumptions and thus, it is
+important to consider the impacts of such models on the consensus algorithms to
+be investigated.
 
 \subsubsection{Synchronous and Asynchronous Systems}
 
-There are two most popular system models in distributed systems - synchronous
-system model and the asynchronous system model. In the synchronous system model,
-there is a bound on how long a message takes to be delivered, which means each
-message is received within bounded time as long as the sender and recipient
-processes are alive. The drift of each process's local clock has a known bound.
-Each step in a process takes a time that is lower bounded by a known value and
-upper bound by a known value. The bound is a global bound across the entire
-state system. E.g., a collection of processors connected by a communication bus.
-The asynchronous system model, on the other hand, does not have any bound on
-anything. There is no bound on process execution and message transmission
-delays. The drift rate of a clock might be arbitrarily fast or arbitrarily slow.
-The asynchronous system is a more general model than the synchronous system
-model, which also means the consensus problem is more difficult to be solved in
-this model. An algorithm work for an asynchronous system will also work for the
-asynchronous system. Lots of the very widely used distributed systems adhere to
-it. In the synchronous system model, the consensus problem is solvable. However,
-the consensus is impossible to solve in the asynchronous system model
-\cite{fischer1985impossibility}. Whatever protocol or algorithm is provided,
-there is always a worst-case possible execution scenario where some processes
-fail, and some messages are delayed, which would prevent the system from
-reaching consensus. But actually, this impossibility result derives from a
-worst-case scenario that hardly happens. In reality, process scheduling has a
-degree of randomness \cite{aguilera2010stumbling}. So, even though it is
-theoretically feasible to provide consensus in the asynchronous system model,
-through some compromises, practical asynchronous system consensus algorithms can
-still be implemented in practice.
+\textit{Fundamental models} provide an ``abstract perspective'' for considering
+individual aspects of a distributed system \cite{coulouris2005distributed}. An
+\textit{interaction model} is a fundamental model concerned with communication
+and coordination between processes, including aspects such as process execution,
+message delivery and clock drift \cite{coulouris2005distributed}. Although it is
+difficult to set limits on these, considering ``two extremes of a spectrum''
+gives rise to a pair of simple models---one with strong assumptions about time
+and the other with none \cite{coulouris2005distributed, hadzilacos1994modular}.
+
+The \textit{synchronous} system model is defined by Hadzilacos and Toueg
+\cite{hadzilacos1994modular} to be one in which:
+
+\begin{enumerate}
+  \item Time taken by a process to execute a step has known upper and lower
+    bounds.
+  \item Every process has a local clock whose drift rate has a known bound.
+  \item There is a known upper bound on message delay.
+\end{enumerate}
+
+These bounds are global across the entire system. A collection of processors
+connected by a communication bus is an example of a system which closely aligns
+to the synchronous model.
+
+By contrast, the \textit{asynchronous} system model is one which makes no
+assumptions about time \cite{coulouris2005distributed, hadzilacos1994modular}.
+Namely, there are no bounds on process execution time or message transmission
+delay and clock drift rates may be arbitrarily fast or slow
+\cite{coulouris2005distributed}. This model is useful when considering systems
+such as the Internet \cite{coulouris2005distributed}.
+
+The asynchronous model is more general than the synchronous counterpart. As
+such, it is more difficult to solve the consensus problem under the former than
+the latter. An algorithm which works under the asynchronous model will also work
+for the synchronous model.
+
+The consensus problem is solvable under the synchronous model
+\cite{fischer1985impossibility, kshemkalyani_singhal_2008}. However, it has been
+shown by Fischer \cite{fischer1985impossibility} to be impossible to solve under
+the asynchronous model. No matter the protocol or algorithm, there is always a
+``window of vulnerability'' during which the failure of processes or delay of
+messages prevents the system from reaching consensus by way of nontermination
+\cite{fischer1985impossibility}. Despite this, it should be noted that the
+impossibility arises from a worst-case scenario of low probability---in reality,
+process scheduling has aspects of randomness \cite{aguilera2010stumbling}. Thus,
+although it is not theoretically possible to guarantee consensus under the
+asynchronous model in all circumstances, consensus algorithms can still be
+implemented in practice.
 
 \subsubsection{Byzantine and Crash Failures}
 
-According to the types of failures that consensus algorithms can handle, we can
-classify them into the following two types:
+A consensus algorithm may be classified as either of the following, depending on
+the types of failures it can handle.
 
 \begin{itemize}
-	\item Byzantine Fault Tolerance (BFT): A BFT Algorithm can handle fault in
-    arbitrary ways, including malicious actions of an adversary.
-	\item Crash Fault Tolerance (CFT): A CFT Algorithm can handle failure caused
-    by processes crash or fail-stop. E.g., Paxos and Raft.
+	\item Byzantine Fault Tolerant (BFT): if the algorithm can handle arbitrary
+    faults, including those arising from malicious actions of an adversary.
+	\item Crash Fault Tolerant (CFT): if the algorithm can handle failures caused
+    by process crashes or fail-stops.
 \end{itemize}
 
-Any algorithm that can work for BFT would also work for CFT. That is because
-Byzantine failures contain all possible faults in the system model. The relation
-of different faults \cite{barborak1993consensus} is shown on Figure
-\ref{fig:aofc}.
+Any BFT algorithm is also a CFT algorithm, since Byzantine failures encompass
+all possible faults in the system model. The hierarchy of different faults
+\cite{barborak1993consensus} is shown in Figure \ref{fig:aofc}.
 
 \begin{figure}[htp]
   \centering
   \includegraphics[width=0.8\textwidth]{img/AOFC.pdf}
-  \caption{An ordered fault classification (\textbf{include author here})}
+  \caption{An ordered fault classification (Barborak et al.)}
   \label{fig:aofc}
 \end{figure}
 
