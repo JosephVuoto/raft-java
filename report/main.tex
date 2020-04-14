@@ -17,7 +17,7 @@
 \maketitle
 
 
-\section{Motivation}
+\section{Introduction}
 
 Achieving agreement among remote processes (where some may be faulty) is a
 fundamental problem in distributed computing \cite{fischer1985impossibility}.
@@ -193,26 +193,14 @@ all possible faults in the system model. The hierarchy of different faults
   \label{fig:aofc}
 \end{figure}
 
-\subsection{Consensus Algorithms}
 
-Many problems in distributed systems are closely bound up with consensus, which
-makes finding effective solutions to consensus problem become significant.
+\section{Relevant Problems}
 
-%% Aaron Yau: Maybe I would write this part next week, to give a brief summary
-% and comparison of some well-known algorithms instead of paxos or rafe. Or I
-% would feel appreciate that someone can continue to write based on the things I
-% wrote.}
-
-
-%% May be needed in the future.
-% \section{Impossibility of consensus}
-% It has been shown that in an asynchronous system of processes, ``every protocol
-% for this problem has the possibility of nontermination, even with only one
-% faulty process.'' \cite{fischer1985impossibility}
-
-
-\section{Relevant problems}
-
+The consensus problem lies at the core of many problems in distributed
+computing, making effective solutions to it highly desirable
+\cite{fischer1985impossibility}. To motivate consensus in context, related
+problems---highlighting useful applications in distributed computing---are
+discussed in this section.
 
 \subsection{Reliable Multicast}
 
