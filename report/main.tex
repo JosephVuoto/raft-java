@@ -3,6 +3,7 @@
 \usepackage{booktabs}
 \usepackage{diagbox}
 \usepackage{graphicx}
+\usepackage{ragged2e}
 \usepackage{tabularx}
 \parindent 0pt
 \parskip 5pt
@@ -66,10 +67,13 @@ transformed to one of the others by reduction \cite{fischer1983consensus}.
 
 \begin{table}[htp]
   \centering
-  \begin{tabularx}{\linewidth}{lXXX}
+  \begin{tabularx}{\linewidth}{%
+    l%
+    >{\raggedright\arraybackslash}X%
+    >{\raggedright\arraybackslash}X%
+    >{\raggedright\arraybackslash}X}
   \toprule
-  Condition & Consensus Problem & Byzantine Generals Problem
-    & Interactive Consistency Problem \\
+  Condition & Consensus & Byzantine Generals & Interactive Consistency \\
   \midrule
   \textbf{Termination} & Eventually decide on a \textit{value}
     & Eventually decide on a \textit{value}
@@ -80,11 +84,11 @@ transformed to one of the others by reduction \cite{fischer1983consensus}.
     & Agree on the same array of values $A[v_{1} \ldots v_{n}]$ \\
   \addlinespace
   \textbf{Integrity}
-    & The decision value is based on all the correct processes's propositions
-    & If the commander is correct, then all correct processes decide
-      on the value that commander proposed
-    & All correct processes decide on $v_{i}$ as the ${i}$th component of their
-      vector, if $p_{i}$ is correct \\
+    & The decided value is based on the propositions of all correct processes
+    & If the commander is correct, then all correct processes decide on the
+      value proposed by it
+    & All correct processes decide on $v_{i}$ as the $i\textsuperscript{th}$
+      component of their vector if $p_{i}$ is correct \\
   \bottomrule
 \end{tabularx}
   \caption{Comparison of similar problems}
@@ -247,7 +251,7 @@ the same as Paxos.
   \subsubsection{Leader}
   There can be only one Leader in the entire cluster at the same time. The leader handles all client interactions.
   \subsubsection{Candidate}
-  The candidate state is a state between the follower state and the leader state. When a follower becomes a candidate, an election 
+  The candidate state is a state between the follower state and the leader state. When a follower becomes a candidate, an election
   will be held. The candidate who wins the election will be the new leader.
 \subsection{Protocol}
 In the Raft algorithm, time is divided into terms, Each term has a number, and the number increments when a new term starts. Each term starts
