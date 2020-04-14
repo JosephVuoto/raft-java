@@ -1,7 +1,9 @@
 \documentclass[12pt, a4paper]{article}
 \usepackage{geometry}
+\usepackage{booktabs}
 \usepackage{diagbox}
 \usepackage{graphicx}
+\usepackage{tabularx}
 \parindent 0pt
 \parskip 5pt
 \pagestyle{plain}
@@ -22,58 +24,70 @@ This problem is known as \textit{consensus} and lies ``at the core of many
 algorithms for distributed data processing, distributed file management, and
 fault tolerant distributed applications.'' \cite{fischer1985impossibility}
 
+Due to issues such as node failures and network unreliability, it is difficult
+to achieve consistency among nodes in distributed computing or multi-agent
+systems.
+
 \section{Formal Definition}
 
 \subsection{Consensus Problem}
 
-Due to problems such as unreliable network communication between nodes and node
-failures, it is difficult to achieve consistency between nodes in distributed
-computing or multi-agent systems. In a consensus problem
-\cite{coulouris2005distributed}, every process $p_{i}$ proposes a single value
-$v_{i}$ in the \textit{undecided} state, drawn from a set $D(i = 1,2,...,N)$.
-Then processes exchange values with each other through message passing. After
-that, each process would set their decision variable, $d_{i}$ based on the
-information they gained from other processes. In doing so, they enter the
-\textit{decided} state, in which $d_{i} (i = 1, 2, ..., N)$ may not be changed.
-The requirement of the problem is to come up with a protocol or algorithm so
-that the following conditions should be satisfied for every execution:
-\begin{itemize} \item \textbf{Termination}: All non-faulty process must set its
-decision variable eventually. \item \textbf{Agreement}: All the non-faulty
-processes in the decided state must have the same value, which means that if
-$p_{i}$ and $p_{j}$ are correct and have entered the decided state, then $d_{i} =
-d_{j}(i, j = 1, 2, ..., N)$. \item \textbf{Integrity/Validity}: If all the
-non-faulty processes proposed the same value, then the agreed upon decision
-value by all the non-faulty processes must be that same value. \end{itemize}
-There are two other problem similar to the concensus problem - the Byzantine
-agreement problem, and the interactive consistency problem. The differences
-between them are shown in Table \ref{tab:dbtap}. Even though the requirement
-details of them are different, a solution to any one of them can be transformed
-to the other two problems by reduction \cite{fischer1983consensus}.
+The consensus problem is defined with respect to a collection of $N$ processes
+which communicate by message passing. Every process $p_{i}$ $(i = 1, \ldots, N)$
+begins in the \textit{undecided} state, in which they each propose a single
+value $v_{i} \in D$, where $D$ is a set of acceptable values
+\cite{coulouris2005distributed}.
+
+The processes then exchange values with each other. During this phase, each
+process sets the value of its \textit{decision variable}, $d_i$ $(i = 1, \ldots,
+N)$, based on the information obtained from other processes. In doing so, they
+enter the \textit{decided} state, in which the decision variable may no longer
+change.
+
+A consensus algorithm must satisfy the following conditions for every execution:
+
+\begin{itemize}
+  \item \textbf{Termination}: Each non-faulty process $p_i$ must eventually set
+    $d_i$.
+  \item \textbf{Agreement}: All non-faulty processes in the decided state
+    must have the same value. If $p_{i}$ and $p_{j}$ are correct and have
+    entered the decided state, then $d_{i} = d_{j}$ $(i, j = 1, \ldots, N)$.
+  \item \textbf{Integrity/Validity}: If all non-faulty processes proposed
+    the same value, then the decision variable of all non-faulty processes is
+    that same value.
+\end{itemize}
+
+There are two other problems similar to the consensus problem---the
+\textit{Byzantine generals problem} (also known as the \textit{Byzantine
+agreement problem}) and the \textit{interactive consistency problem}. Table
+\ref{tab:dbtap} provides a comparison between these and the consensus problem.
+Despite the differences in requirements, a solution to any one of them can be
+transformed to one of the others by reduction \cite{fischer1983consensus}.
 
 \begin{table}[htp]
   \centering
-  \begin{tabular}{|l|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
-  \hline
-  Conditions & Consensus Problem & Byzantine Generals Problem
+  \begin{tabularx}{\linewidth}{lXXX}
+  \toprule
+  Condition & Consensus Problem & Byzantine Generals Problem
     & Interactive Consistency Problem \\
-  \hline
-  Termination & Eventually decide on \textbf{a value}
-    & Eventually decide on \textbf{a value}
-    & Eventually decide on the \textbf{array A} \\
-  \hline
-  Agreement & Agree on \textbf{the same value}
-    & Agree on \textbf{the same value}
-    & Agree on \textbf{the same array of values $A[v_{1}...v_{n}]$} \\
-  \hline
-  Integrity
-    & The decision value is based on
-      \textbf{all the correct processes's propositions}
-    & If \textbf{the commander} is correct, then all correct processes decide
-      on the value that \textbf{commander proposed}
+  \midrule
+  \textbf{Termination} & Eventually decide on a \textit{value}
+    & Eventually decide on a \textit{value}
+    & Eventually decide on an \textit{array $A$} \\
+  \addlinespace
+  \textbf{Agreement} & Agree on the same value
+    & Agree on the same value
+    & Agree on the same array of values $A[v_{1} \ldots v_{n}]$ \\
+  \addlinespace
+  \textbf{Integrity}
+    & The decision value is based on all the correct processes's propositions
+    & If the commander is correct, then all correct processes decide
+      on the value that commander proposed
     & All correct processes decide on $v_{i}$ as the ${i}$th component of their
-      \textbf{vector}, if $p_{i}$ is correct \\ \hline
-  \end{tabular}
-  \caption{Differences Between Tree Similar Problems}
+      vector, if $p_{i}$ is correct \\
+  \bottomrule
+\end{tabularx}
+  \caption{Comparison of similar problems}
   \label{tab:dbtap}
 \end{table}
 
