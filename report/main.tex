@@ -23,63 +23,147 @@ algorithms for distributed data processing, distributed file management, and
 fault tolerant distributed applications.'' \cite{fischer1985impossibility}
 
 \section{Formal Definition}
+
 \subsection{Consensus Problem}
-Due to problems such as unreliable network communication between nodes and node failures, it is difficult to achieve consistency between nodes in distributed computing or multi-agent systems. In a consensus problem \cite{coulouris2005distributed}, every process $p_{i}$ proposes a single value $v_{i}$ in the \textit{undecided} state, drawn from a set $D(i = 1,2,...,N)$. Then processes exchange values with each other through message passing. After that, each process would set their decision variable, $d_{i}$ based on the information they gained from other processes. In doing so, they enter the \textit{decided} state, in which $d_{i} (i = 1, 2, ..., N)$ may not be changed. The requirement of the problem is to come up with a protocol or algorithm so that the following conditions should be satisfied for every execution:
-\begin{itemize}
-	\item \textbf{Termination}: All non-faulty process must set its decision variable eventually.
-	\item \textbf{Agreement}: All the non-faulty processes in the decided state must have the same value, which means that if $p_{i}$ and $p_{j}$ are correct and have entered the decided state, then $d_{i} = d_{j}(i, j = 1, 2, ..., N)$.
-	\item \textbf{Integrity/Validity}: If all the non-faulty processes proposed the same value, then the agreed upon decision value by all the non-faulty processes must be that same value.
-\end{itemize}
-There are two other problem similar to the concensus problem - the Byzantine agreement problem, and the interactive consistency problem. The differences between them are shown on table \ref{tab:dbtap}. Even tough the requirement details of them are different, a solution to any one of them can be transformed to the other two problems by reduction \cite{fischer1983consensus}. 
+
+Due to problems such as unreliable network communication between nodes and node
+failures, it is difficult to achieve consistency between nodes in distributed
+computing or multi-agent systems. In a consensus problem
+\cite{coulouris2005distributed}, every process $p_{i}$ proposes a single value
+$v_{i}$ in the \textit{undecided} state, drawn from a set $D(i = 1,2,...,N)$.
+Then processes exchange values with each other through message passing. After
+that, each process would set their decision variable, $d_{i}$ based on the
+information they gained from other processes. In doing so, they enter the
+\textit{decided} state, in which $d_{i} (i = 1, 2, ..., N)$ may not be changed.
+The requirement of the problem is to come up with a protocol or algorithm so
+that the following conditions should be satisfied for every execution:
+\begin{itemize} \item \textbf{Termination}: All non-faulty process must set its
+decision variable eventually. \item \textbf{Agreement}: All the non-faulty
+processes in the decided state must have the same value, which means that if
+$p_{i}$ and $p_{j}$ are correct and have entered the decided state, then $d_{i} =
+d_{j}(i, j = 1, 2, ..., N)$. \item \textbf{Integrity/Validity}: If all the
+non-faulty processes proposed the same value, then the agreed upon decision
+value by all the non-faulty processes must be that same value. \end{itemize}
+There are two other problem similar to the concensus problem - the Byzantine
+agreement problem, and the interactive consistency problem. The differences
+between them are shown on table \ref{tab:dbtap}. Even tough the requirement
+details of them are different, a solution to any one of them can be transformed
+to the other two problems by reduction \cite{fischer1983consensus}.
 
 \begin{table}[htp]
-\centering
-\begin{tabular}{|l|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
-\hline
-Conditions  & Consensus Problem & Byzantine Generals Problem& Interactive Consistency Problem \\ \hline
-Termination & Eventually decide on \textbf{a value} & Eventually decide on \textbf{a value} & Eventually decide on the \textbf{array A} \\ \hline
-Agreement   & Agree on \textbf{the same value} & Agree on \textbf{the same value} & Agree on \textbf{the same array of values $A[v_{1}...v_{n}]$} \\ \hline
-Integrity 	& The decision value is based on \textbf{all the correct processes's propositions} &  If \textbf{the commander} is correct, then all correct processes decide on the value that \textbf{commander proposed} & All correct processes decide on $v_{i}$ as the ${i}$th component of their \textbf{vector}, if $p_{i}$ is correct \\ \hline
-\end{tabular}
-\caption{Differences Between Tree Similar Problems}
-\label{tab:dbtap}
+  \centering
+  \begin{tabular}{|l|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+  \hline
+  Conditions & Consensus Problem & Byzantine Generals Problem
+    & Interactive Consistency Problem \\
+  \hline
+  Termination & Eventually decide on \textbf{a value}
+    & Eventually decide on \textbf{a value}
+    & Eventually decide on the \textbf{array A} \\
+  \hline
+  Agreement & Agree on \textbf{the same value}
+    & Agree on \textbf{the same value}
+    & Agree on \textbf{the same array of values $A[v_{1}...v_{n}]$} \\
+  \hline
+  Integrity
+    & The decision value is based on
+      \textbf{all the correct processes's propositions}
+    & If \textbf{the commander} is correct, then all correct processes decide
+      on the value that \textbf{commander proposed}
+    & All correct processes decide on $v_{i}$ as the ${i}$th component of their
+      \textbf{vector}, if $p_{i}$ is correct \\ \hline
+  \end{tabular}
+  \caption{Differences Between Tree Similar Problems}
+  \label{tab:dbtap}
 \end{table}
 
 \subsection{CAP Theorem}
-The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is impossible for an algorithm to provide more than two of these three properties:
+
+The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is
+impossible for an algorithm to provide more than two of these three properties:
+
 \begin{itemize}
-	\item \textbf{Consistency}: All data backups in the distributed system have the same value at the same time.
-	\item \textbf{Availability}: After some nodes in the cluster fail, the entire cluster can still respond to client read and write requests, but there is no guarantee that the data responded is most latest.
-	\item \textbf{Partition tolerance}: The system continue to operate dispite delayed, lost or dropped messages on the network.  
+	\item \textbf{Consistency}: All data backups in the distributed system have
+    the same value at the same time.
+	\item \textbf{Availability}: After some nodes in the cluster fail, the entire
+    cluster can still respond to client read and write requests, but there is no
+    guarantee that the data responded is most latest.
+	\item \textbf{Partition tolerance}: The system continue to operate dispite
+    delayed, lost or dropped messages on the network.
 \end{itemize}
+
 %% Maybe include in the future.
 % \subsection{ACID Theorem}
 
 \subsection{Models of Computation}
-The difficulty of solving consensus problem under different system models and assumptions are varied. Each consensus algorithm has its assumptions about the problem, and we need to classify and compare based on their assumptions about the problem.
+
+The difficulty of solving consensus problem under different system models and
+assumptions are varied. Each consensus algorithm has its assumptions about the
+problem, and we need to classify and compare based on their assumptions about
+the problem.
 
 \subsubsection{Synchronous and Asynchronous Systems}
-There are two most popular system models in distributed systems - synchronous system model and the asynchronous system model. In the synchronous system model, there is a bound on how long a message takes to be delivered, which means each message is received within bounded time as long as the sender and recipient processes are alive. The drift of each processes' local clock has a known bound. Each step in a process takes a time that is lower bounded by a known value and upper bound by a known value. The bound is a global bound across the entire state system. E.g., a collection of processors connected by a communication bus. The asynchronous system model, on the other hand, does not have any bound on anything. There is no bound on process execution and message transmission delays. The drift rate of a clock might be arbitrarily fast or arbitrarily slow. The asynchronous system is a more general model than the Synchronous system model, which also means the consensus problem is more difficult to be solved in this model. An algorithm work for an asynchronous system will also work for the asynchronous system. Lots of the very widely used distributed systems adhere to it. In the Synchronous System Model, the consensus problem is solvable. However, the consensus is impossible to solve in the asynchronous system model \cite{fischer1985impossibility}. Whatever what protocol or algorithm is provided, there is always a worst-case possible execution scenario where some processes fail, and some messages are delayed, which would prevent the system from reaching consensus. But actually, this impossibility result derives from a worst-case scenario that hardly happens. In reality, process scheduling has a degree of randomness.\cite{aguilera2010stumbling} So, even though it is theoretically feasible to provide consensus in the asynchronous system model, through some compromises, practical asynchronous system consensus algorithms can still be implemented in practice.
+
+There are two most popular system models in distributed systems - synchronous
+system model and the asynchronous system model. In the synchronous system model,
+there is a bound on how long a message takes to be delivered, which means each
+message is received within bounded time as long as the sender and recipient
+processes are alive. The drift of each processes' local clock has a known bound.
+Each step in a process takes a time that is lower bounded by a known value and
+upper bound by a known value. The bound is a global bound across the entire
+state system. E.g., a collection of processors connected by a communication bus.
+The asynchronous system model, on the other hand, does not have any bound on
+anything. There is no bound on process execution and message transmission
+delays. The drift rate of a clock might be arbitrarily fast or arbitrarily slow.
+The asynchronous system is a more general model than the Synchronous system
+model, which also means the consensus problem is more difficult to be solved in
+this model. An algorithm work for an asynchronous system will also work for the
+asynchronous system. Lots of the very widely used distributed systems adhere to
+it. In the Synchronous System Model, the consensus problem is solvable. However,
+the consensus is impossible to solve in the asynchronous system model
+\cite{fischer1985impossibility}. Whatever what protocol or algorithm is
+provided, there is always a worst-case possible execution scenario where some
+processes fail, and some messages are delayed, which would prevent the system
+from reaching consensus. But actually, this impossibility result derives from a
+worst-case scenario that hardly happens. In reality, process scheduling has a
+degree of randomness.\cite{aguilera2010stumbling} So, even though it is
+theoretically feasible to provide consensus in the asynchronous system model,
+through some compromises, practical asynchronous system consensus algorithms can
+still be implemented in practice.
 
 \subsubsection{Byzantine and Crash Failures}
-According to the types of failures that consensus algorithms can handle, we can classify them into the following two types:
+
+According to the types of failures that consensus algorithms can handle, we can
+classify them into the following two types:
+
 \begin{itemize}
-	\item Byzantine Fault Tolerance (BFT): A BFT Algorithm can handle fault in arbitrary ways, including malicious actions of an adversary.
-	\item Crash Fault Tolerance (CFT): A CFT Algorithm can handle failure caused by processes crash or fail-stop. E.g., Paxos and Raft.
+	\item Byzantine Fault Tolerance (BFT): A BFT Algorithm can handle fault in
+    arbitrary ways, including malicious actions of an adversary.
+	\item Crash Fault Tolerance (CFT): A CFT Algorithm can handle failure caused
+    by processes crash or fail-stop. E.g., Paxos and Raft.
 \end{itemize}
-Any algorithm that can work for BFT would also work for CFT. That is because Byzantine failures contain all possible faults in the system model. The relation of different faults \cite{barborak1993consensus} is shown on Figure \ref{fig:aofc}.
+
+Any algorithm that can work for BFT would also work for CFT. That is because
+Byzantine failures contain all possible faults in the system model. The relation
+of different faults \cite{barborak1993consensus} is shown on Figure
+\ref{fig:aofc}.
 
 \begin{figure}[htp]
-\centering
-\includegraphics[width=0.8\textwidth]{img/AOFC.pdf}
-\caption{An ordered fault classification}
-\label{fig:aofc}
+  \centering
+  \includegraphics[width=0.8\textwidth]{img/AOFC.pdf}
+  \caption{An ordered fault classification (\textbf{include author here})}
+  \label{fig:aofc}
 \end{figure}
 
 \subsection{Consensus Algorithms}
-Many problems in distributed systems are closely bound up with consensus, which makes finding effective solutions to consensus problem become significant. 
-\\
-\textit{Aaron Yau: Maybe I would write this part next week, to give a brief summary and comparison of some well-known algorithms instead of paxos or rafe. Or I would feel appreciate that someone can continue to write based on the things I wrote.}
+
+Many problems in distributed systems are closely bound up with consensus, which
+makes finding effective solutions to consensus problem become significant.
+
+%% Aaron Yau: Maybe I would write this part next week, to give a brief summary
+% and comparison of some well-known algorithms instead of paxos or rafe. Or I
+% would feel appreciate that someone can continue to write based on the things I
+% wrote.}
 
 
 %% May be needed in the future.
@@ -135,7 +219,6 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 \subsection{Optimisations}
 
 
-
 \section{Raft algorithm}
 
 \subsection{Roles}
@@ -149,8 +232,6 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 
 
 \section{Application}
-
-
 
 
 \bibliographystyle{ieeetr}
