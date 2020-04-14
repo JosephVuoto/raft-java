@@ -46,7 +46,7 @@ non-faulty processes proposed the same value, then the agreed upon decision
 value by all the non-faulty processes must be that same value. \end{itemize}
 There are two other problem similar to the concensus problem - the Byzantine
 agreement problem, and the interactive consistency problem. The differences
-between them are shown on table \ref{tab:dbtap}. Even tough the requirement
+between them are shown in Table \ref{tab:dbtap}. Even though the requirement
 details of them are different, a solution to any one of them can be transformed
 to the other two problems by reduction \cite{fischer1983consensus}.
 
@@ -88,7 +88,7 @@ impossible for an algorithm to provide more than two of these three properties:
 	\item \textbf{Availability}: After some nodes in the cluster fail, the entire
     cluster can still respond to client read and write requests, but there is no
     guarantee that the data responded is most latest.
-	\item \textbf{Partition tolerance}: The system continue to operate dispite
+	\item \textbf{Partition tolerance}: The system continue to operate despite
     delayed, lost or dropped messages on the network.
 \end{itemize}
 
@@ -108,25 +108,25 @@ There are two most popular system models in distributed systems - synchronous
 system model and the asynchronous system model. In the synchronous system model,
 there is a bound on how long a message takes to be delivered, which means each
 message is received within bounded time as long as the sender and recipient
-processes are alive. The drift of each processes' local clock has a known bound.
+processes are alive. The drift of each process's local clock has a known bound.
 Each step in a process takes a time that is lower bounded by a known value and
 upper bound by a known value. The bound is a global bound across the entire
 state system. E.g., a collection of processors connected by a communication bus.
 The asynchronous system model, on the other hand, does not have any bound on
 anything. There is no bound on process execution and message transmission
 delays. The drift rate of a clock might be arbitrarily fast or arbitrarily slow.
-The asynchronous system is a more general model than the Synchronous system
+The asynchronous system is a more general model than the synchronous system
 model, which also means the consensus problem is more difficult to be solved in
 this model. An algorithm work for an asynchronous system will also work for the
 asynchronous system. Lots of the very widely used distributed systems adhere to
-it. In the Synchronous System Model, the consensus problem is solvable. However,
+it. In the synchronous system model, the consensus problem is solvable. However,
 the consensus is impossible to solve in the asynchronous system model
-\cite{fischer1985impossibility}. Whatever what protocol or algorithm is
-provided, there is always a worst-case possible execution scenario where some
-processes fail, and some messages are delayed, which would prevent the system
-from reaching consensus. But actually, this impossibility result derives from a
+\cite{fischer1985impossibility}. Whatever protocol or algorithm is provided,
+there is always a worst-case possible execution scenario where some processes
+fail, and some messages are delayed, which would prevent the system from
+reaching consensus. But actually, this impossibility result derives from a
 worst-case scenario that hardly happens. In reality, process scheduling has a
-degree of randomness.\cite{aguilera2010stumbling} So, even though it is
+degree of randomness \cite{aguilera2010stumbling}. So, even though it is
 theoretically feasible to provide consensus in the asynchronous system model,
 through some compromises, practical asynchronous system consensus algorithms can
 still be implemented in practice.
