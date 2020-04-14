@@ -100,9 +100,9 @@ impossible for an algorithm to provide more than two of these three properties:
 	\item \textbf{Consistency}: All data backups in the distributed system have
     the same value at the same time.
 	\item \textbf{Availability}: After some nodes in the cluster fail, the entire
-    cluster can still respond to client read and write requests, but there is no
-    guarantee that the data responded is most latest.
-	\item \textbf{Partition tolerance}: The system continue to operate despite
+    cluster can still respond to client read and write requests. However, there
+    is no guarantee that the data produced is most up-to-date.
+	\item \textbf{Partition tolerance}: The system continues to operate despite
     delayed, lost or dropped messages on the network.
 \end{itemize}
 
