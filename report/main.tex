@@ -108,9 +108,45 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 
 
 \section{Raft algorithm}
-
+Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
+understandable and easier to implement a practical system. The highlight of the Raft algorithm is that it adopts an
+engineering thinking --- It simplifies the model of the design according to the requirements in practical applications and
+modularizes the process of the algorithm. From the perspective of performance and security, the Raft algorithm is also almost
+the same as Paxos.
 \subsection{Roles}
-
+  \subsubsection{Follower}
+  All nodes are followers when they are just started. The followers are completely passive, the can only respond to the incoming
+  messages. If the client's message is sent to a follower, the message will be redirected to the leader of this cluster. Followers may
+  also be able to become a leader through elections under certain conditions.
+  \subsubsection{Leader}
+  There can be only one Leader in the entire cluster at the same time. The leader handles all client interactions.
+  \subsubsection{Candidate}
+  The candidate is a state between follower and leader. When a follower becomes a candidate, an election will be held. The candidate
+  who wins the election will be the new leader.
+\subsection{Protocol}
+In the Raft algorithm, time is divided into terms, Each term has a number, and the number increments with a new term. Each term starts
+with an election. If the election is successful, then the chosen leader will serve out for the rest of the term, which means that
+only one leader can be elected in a given term. If the election is not successful, then the candidate starts a new term. Each node
+in the cluster maintains the value of the current term and it should be stored reliably. The function of the term and term number is
+to allow the nodes to identify the information that is out of date.
+\par
+In order to let the followers believe there is an active leader in the cluster, followers expect to receive heartbeat messages from
+the leader regularly. If the follower's timeout of heartbeat message elapses, it assumes that the leader crashed and will start a
+new election. This timeout is often much longer than the propagation time of the message in the network.
+  \subsubsection{Leader Election}
+  When a node begins an election, the first thing it does is to increment its current term number. The node then converts itself from
+  follower state to candidate state. To win the election, the node must receive votes from a majority of nodes in the cluster. The node
+  votes for itself, then send a message for requesting votes to all other nodes and retry this process until:
+  \begin{itemize}
+    \item It received votes from majority of nodes in the cluster, which means it wins the election and becomes the leader.
+    \item It received message from a leader, which means one of other candidates wins the election, the current node becomes a follower.
+    \item Election timeout elapses, which means no one wins the election. The node will then increment the term number and start a new election
+  \end{itemize}
+  \par
+  To ensure safety, each node can only give out at most one vote in a term. This guarantees that only one candidate can get votes from
+  the majority in the same term, thus only one candidate can win the election. Also, to prevent live lock of the election, the election
+  timeout of each node is chosen randomly.
+  \subsubsection{Log Replication}
 \subsection{Issues}
 
 \subsection{Optimisations}
