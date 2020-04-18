@@ -19,19 +19,48 @@
 
 \section{Introduction}
 
-Achieving agreement among remote processes (where some may be faulty) is a
-fundamental problem in distributed computing \cite{fischer1985impossibility}.
-This problem is known as \textit{consensus} and lies ``at the core of many
-algorithms for distributed data processing, distributed file management, and
-fault tolerant distributed applications.'' \cite{fischer1985impossibility}
+Achieving agreement among remote processes in a distributed system is a
+fundamental problem relevant to a wide range of applications
+\cite{fischer1985impossibility, kshemkalyani_singhal_2008}. Indeed, many common
+tasks---such as coordinating access to shared resources, electing a leader and
+achieving agreement on message delivery order---share the core requirement for
+processes to communicate and negotiate with each other to establish a common
+understanding before taking further action \cite{kshemkalyani_singhal_2008,
+coulouris2005distributed}.
 
-Due to issues such as node failures and network unreliability, it is difficult
-to achieve consistency among nodes in distributed computing or multi-agent
-systems.
+The \textit{consensus} problem generalises these tasks to ask how a collection
+of processes can agree on a value $v$, no matter the domain from which $v$ may
+be taken \cite{coulouris2005distributed}. Due to issues such as node failures
+and network unreliability, it can be difficult to achieve consistency among
+nodes in distributed computing or multi-agent systems
+\cite{coulouris2005distributed}. Therefore, the algorithms used to achieve
+consensus must take failures into consideration and aim to be as robust as
+possible.
+
+This report first provides a formal definition of the consensus problem in
+\S\ref{sec:consensus-def}, alongside a brief introduction to two closely related
+problems. We then introduce the \textit{CAP} theorem in \S\ref{sec:cap-theorem},
+outlining a key limitation of distributed systems before discussing important
+fundamental models in \S\ref{sec:fundamental-models} which are important to
+consider when comparing and analysing different distributed algorithms. In doing
+so, will discover that depending on the model being considered, no algorithm
+can guarantee consensus under all circumstances.
+
+To further motivate the consensus problem and expand on its aforementioned
+fundamentality to many applications, we discuss in detail a range of relevant
+tasks in \S\ref{sec:relevant-problems}. We then focus on two popular algorithms
+by which to achieve consensus---\textit{Paxos} and \textit{Raft}---detailed in
+\S\ref{sec:paxos} and \S\ref{sec:raft}, respectively. A detailed comparative
+analysis between the two is provided in \S\ref{sec:analysis}, discussing the
+benefits and drawbacks of either algorithm. Finally, we discuss our own
+implementation of the \textbf{(Paxos/Raft)} algorithm as part of a
+\textbf{(application type)} application, providing a case study of the algorithm
+in a concrete context.
+
 
 \section{Formal Definition}
 
-\subsection{Consensus Problem}
+\subsection{Consensus Problem} \label{sec:consensus-def}
 
 The consensus problem is defined with respect to a collection of $N$ processes
 which communicate by message passing. Every process $p_{i}$ $(i = 1, \ldots, N)$
@@ -95,7 +124,7 @@ transformed to one of the others by reduction \cite{fischer1983consensus}.
   \label{tab:dbtap}
 \end{table}
 
-\subsection{CAP Theorem}
+\subsection{CAP Theorem} \label{sec:cap-theorem}
 
 The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is
 impossible for an algorithm to provide more than two of these three properties:
@@ -113,7 +142,7 @@ impossible for an algorithm to provide more than two of these three properties:
 %% Maybe include in the future.
 % \subsection{ACID Theorem}
 
-\subsection{Models of Computation}
+\subsection{Models of Computation} \label{sec:fundamental-models}
 
 Solving the consensus problem varies in difficulty depending on the system model
 being considered. Different models assert different assumptions and thus, it is
@@ -194,7 +223,7 @@ all possible faults in the system model. The hierarchy of different faults
 \end{figure}
 
 
-\section{Relevant Problems}
+\section{Relevant Problems} \label{sec:relevant-problems}
 
 The consensus problem lies at the core of many problems in distributed
 computing, making effective solutions to it highly desirable
@@ -222,7 +251,7 @@ Ensuring that simultaneous access to a resource does not occur (exclusive
 access).
 
 
-\section{Paxos algorithm}
+\section{Paxos algorithm} \label{sec:paxos}
 
 \subsection{Roles}
 
@@ -245,7 +274,7 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 \subsection{Optimisations}
 
 
-\section{Raft algorithm}
+\section{Raft algorithm} \label{sec:raft}
 The Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
 understandable and easier to implement a practical system. The highlight of the Raft algorithm is that it adopts an
 engineering thinking --- It simplifies the model of the design according to the requirements in practical applications and
@@ -323,10 +352,10 @@ There are only two type of RPCs in the Raft algorithm:
 \subsection{Optimisations}
 
 
-\section{Comparative analysis}
+\section{Comparative analysis} \label{sec:analysis}
 
 
-\section{Application}
+\section{Application} \label{sec:application}
 
 
 \bibliographystyle{ieeetr}
