@@ -43,19 +43,25 @@ problems. We then introduce the \textit{CAP} theorem in \S\ref{sec:cap-theorem},
 outlining a key limitation of distributed systems before discussing important
 fundamental models in \S\ref{sec:fundamental-models} which are important to
 consider when comparing and analysing different distributed algorithms. In doing
-so, will discover that depending on the model being considered, no algorithm
-can guarantee consensus under all circumstances.
+so, we will discover that under a certain fundamental model, no algorithm can
+guarantee consensus under all circumstances.
 
 To further motivate the consensus problem and expand on its aforementioned
 fundamentality to many applications, we discuss in detail a range of relevant
-tasks in \S\ref{sec:relevant-problems}. We then focus on two popular algorithms
-by which to achieve consensus---\textit{Paxos} and \textit{Raft}---detailed in
-\S\ref{sec:paxos} and \S\ref{sec:raft}, respectively. A detailed comparative
-analysis between the two is provided in \S\ref{sec:analysis}, discussing the
-benefits and drawbacks of either algorithm. Finally, we discuss our own
-implementation of the \textbf{(Paxos/Raft)} algorithm as part of a
-\textbf{(application type)} application, providing a case study of the algorithm
-in a concrete context.
+tasks in \S\ref{sec:relevant-problems}. We then focus on two algorithms by which
+to achieve consensus. \textit{Paxos} \cite{lamport1998part, lamport2001paxos}
+(detailed in \S\ref{sec:paxos}) has been the dominant consensus algorithm for
+much of the past two decades, underpinning most implementations of consensus
+\cite{ongaro2014search}. More recently, however, a contending consensus
+algorithm has been proposed. Raft \cite{ongaro2014search} (detailed in
+\S\ref{sec:raft}) is purported by its authors to ``[produce] a result equivalent
+to (multi-)Paxos'' and be ``as efficient as Paxos'' yet ``more understandable''
+and able to ``provide a better foundation for building practical systems.''
+\cite{ongaro2014search} We provide a detailed comparative analysis between the
+two in \S\ref{sec:analysis}, discussing the benefits and drawbacks of either
+algorithm. Finally, we discuss our own implementation of the
+\textbf{(Paxos/Raft)} algorithm as part of a \textbf{(application type)}
+application, providing a case study of the algorithm in a concrete context.
 
 
 \section{Formal Definition}
