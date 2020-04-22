@@ -289,11 +289,69 @@ Ensuring that simultaneous access to a resource does not occur (exclusive
 access).
 
 
-\section{Paxos algorithm} \label{sec:paxos}
+\section{Paxos Algorithm} \label{sec:paxos}
+In distributed computing, there are processes cooperating with each other. 
+Paxos is designed to achieve consensus which ensures 
+only a single value is chosen from proposed values that 
+proposed by some processes\cite{fischer1983consensus}. 
+After been chosen, this value is also available to be learnt by all processes
+when a process can only learn a value that has beed chosen. 
 
-\subsection{Roles}
+The following content of this section explains 
+Paxos algorithm based on \cite{fischer1983consensus}. 
+In their work, principles are given to solve the consensus problem. 
+These principles require a proposal approach 
+of which each proposal has an ordered number \textit{n} 
+and a proposal value \textit{v}. 
+The principles also require three classes of agents 
+which are proposers, acceptors and learners. 
+There are two phases when choosing a value.
+Phase1 is to \textit{prepare} a proposal by requesting a majority of acceptors. 
+Phase2 is to ask the majority to \textit{accept} this proposal.
+Any of this majority can either accept or decline it.
 
-A process can take more than one role.
+The principles are given here and will be applied later with explanations,
+\begin{quote}
+  P1. An acceptor must accept the first proposal that it receives.
+  \begin{quote}
+    a. An acceptor can accept a proposal numbered \textit{n} 
+      iff it has not responded to a prepare request 
+      having a number greater than \textit{n}.
+  \end{quote}
+  P2. If a proposal with value \textit{v} is chosen, 
+    then every higher-numbered proposal that is chosen has value \textit{v}
+    \begin{quote}
+      a. If a proposal with value \textit{v} is chosen, 
+        then every higher-numbered proposal accepted 
+        by any acceptor has value \textit{v}.
+        
+      b. If a proposal with value \textit{v} is chosen, 
+        then every higher-numbered proposal issued 
+        by any proposer has value \textit{v}.
+
+      c. For any \textit{v} and \textit{n}, 
+        if a proposal with value \textit{v} 
+        and number \textit{n} is issued,
+        then there is a set \textit{S} consisting of 
+        a majority of acceptors such that either 
+          \begin{quote}
+            (i) no acceptor in \textit{S} has accepted 
+              any proposal numbered less than n, or 
+              
+            (ii) \textit{v} is the value of 
+              the highest-numbered proposal among 
+              all proposals numbered less than 
+              \textit{n} accepted by the acceptors in \textit{S}.
+          \end{quote}
+  \end{quote}
+\end{quote}
+
+\subsection{Three Agents}
+
+To achieve the consensus, there are three classes of agents 
+which are proposers, acceptors and learners. 
+They are not mutually exclusive, in other words, a process can be 
+in one or more all classes at a time.
 
 A process is \textit{persistent}---it cannot forget what it has accepted.
 
