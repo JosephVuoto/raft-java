@@ -364,8 +364,21 @@ A process is \textit{persistent}---it cannot forget what it has accepted.
 \subsection{Protocol}
 
 \subsection{Issues}
-
-  \subsubsection{Contention}
+Paxos has several significant shortcomings. The first one is that it 
+is exceptionally difficult to understand\cite{conf/usenix/OngaroO14}. 
+To describe the Paxos algorithm, Lamport described a parliament on a 
+small island in Greece\cite{lamport1998part}. The original paper is 
+very vague and few people can fully understand it. Although Lamport 
+later published a paper trying to simplify the description of the 
+algorithm\cite{lamport2001paxos}, understanding Paxos is still a big 
+challenge. Another drawback of Paxos is that it does not provide a 
+good foundation for building practical implementations\cite{conf/usenix/OngaroO14}.
+The description of the algorithm in Lamport's paper is just an 
+algorithm for a single decree. Lamport mentioned the solution to 
+implement Multi-Paxos, but many details are not sufficiently provided, 
+which leads to the existing implementation of Paxos based on the 
+implementer's own understanding. As a result, practical systems usually
+vary widely.
 
 \subsection{Optimisations}
 
@@ -375,10 +388,10 @@ The Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an altern
 understandable and easier to implement a practical system. The highlight of the Raft algorithm is that it adopts an
 engineering thinking --- It simplifies the model of the design according to the requirements in practical applications and
 modularizes the process of the algorithm. From the perspective of performance and security, the Raft algorithm is also almost
-the same as Paxos.
+the same as Paxos \cite{conf/usenix/OngaroO14}.
 \subsection{Roles}
   \subsubsection{Follower}
-  All nodes are followers when they are started. The followers are completely passive, they can only respond to the incoming
+  All nodes are followers when they are started. The followers are completely passive, they can only respond to incoming
   messages. If the client's message is sent to a follower, the message will be redirected to the leader of this cluster. Followers may
   also be able to become a leader through elections under certain conditions.
   \subsubsection{Leader}
@@ -387,7 +400,7 @@ the same as Paxos.
   The candidate state is a state between the follower state and the leader state. When a follower becomes a candidate, an election
   will be held. The candidate who wins the election will be the new leader.
 \subsection{Protocol}
-In the Raft algorithm, time is divided into terms, Each term has a number, and the number increments when a new term starts. Each term starts
+In the Raft algorithm, time is divided into terms\cite{conf/usenix/OngaroO14}, Each term has a number, and the number increments when a new term starts. Each term starts
 with an election. If the election is successful, then the chosen leader will serve out for the rest of the term, which means that
 only one leader can be elected in a given term. If the election is not successful, then the candidate starts a new term. Each node
 in the cluster maintains the value of the current term number and it should be stored reliably. The function of the term and term number is
@@ -399,8 +412,8 @@ new election. This timeout is often much longer than the propagation time of the
 \par
 There are only two type of RPCs in the Raft algorithm:
 \begin{itemize}
-  \item \textbf{RequestVote RPC}: invoked by candidates to gather votes from other nodes.
-  \item \textbf{AppendEntries RPC}: invoked by the leader to replicate log entries.
+  \item \textbf{RequestVote RPC}: invoked by candidates to gather votes\cite{conf/usenix/OngaroO14} from other nodes.
+  \item \textbf{AppendEntries RPC}: invoked by the leader to replicate log entries\cite{conf/usenix/OngaroO14}.
 \end{itemize}
   \subsubsection{Leader Election}
   When a node begins an election, the first thing it does is to increment its current term number. The node then converts itself from
@@ -435,7 +448,7 @@ There are only two type of RPCs in the Raft algorithm:
   of the next log entry to send to that follower. When AppendEntries consistency check fails, it decrements the nextIndex and retries until the
   follower's log is repaired.
   \subsubsection{Safety}
-  If a leader has decided that a log entry is committed, then that entry should be present in the logs of all future leaders. To guarantee this,
+  If a leader has decided that a log entry is committed, then that entry should be present in the logs of all future leaders\cite{conf/usenix/OngaroO14}. To guarantee this,
   the algorithm picks the candidate to win the election such that it has the log that is most likely to have all the entries that have been
   committed. So the candidates must include log info in RequestVote RPCs including index and term of the last log entry. And the voting servers
   have to deny if its log is more complete.
@@ -443,10 +456,6 @@ There are only two type of RPCs in the Raft algorithm:
   Another safety issue is that if a leader crashes while replicating logs, the new leader will not know whether the last log entry of the
   previous leader has been committed or not. To solve this problem, a new commitment rule must apply --- For a leader to decide an entry
   is committed, in addition to the previous rule, at least one new entry from leader's term must also be stored on the majority of servers.
-\subsection{Issues}
-
-\subsection{Optimisations}
-
 
 \section{Comparative analysis} \label{sec:analysis}
 
