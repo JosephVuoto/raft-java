@@ -6,6 +6,11 @@
 \usepackage{ragged2e}
 \usepackage{tabularx}
 \usepackage{fancyhdr}
+\usepackage{palatino}
+\usepackage{tikz}
+\usepackage{amsthm}
+\usepackage{leftidx}
+\usetikzlibrary{shapes.geometric, arrows}
 
 \parindent 0pt
 \parskip 5pt
@@ -43,6 +48,21 @@
   \texttt{\small zhaomz1@student.unimelb.edu.au}
 }
 \date{Semester 1, 2020}
+
+\newtheorem*{assumption*}{\assumptionnumber}
+\providecommand{\assumptionnumber}{}
+\makeatletter
+\newenvironment{assumption}[2]
+ {
+  \renewcommand{\assumptionnumber}{Assumption #1}
+  \begin{assumption*}%
+  \protected@edef\@currentlabel{#1}
+ }
+ {
+  \end{assumption*}
+ }
+\makeatother
+\newcommand{\asref}[2]{\ref{#1}}
 
 \begin{document}
 \maketitle
@@ -290,32 +310,66 @@ access).
 
 
 \section{Paxos Algorithm} \label{sec:paxos}
+
+Draft: What Paxos do we have?
+
+Paxos \cite{lamport2001paxos}, Fast Paxos \cite{fastpaxos}, 
+S-Paxos \cite{spaxos}, 
+OpenReplica \cite{openreplica} and Ring Paxos \cite{ringpaxos}.
+
+\begin{figure}[htp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{img/RingPaxosThroughput.jpg}
+  \caption{Ring Paxos Throughput}
+  \label{fig:RingPaxosThroughput}
+\end{figure}
+
+
+\subsection{Problem}
 In distributed computing, there are processes cooperating with each other. 
 Paxos is designed to achieve consensus which ensures 
 only a single value is chosen from proposed values that 
 proposed by some processes\cite{fischer1983consensus}. 
 After been chosen, this value is also available to be learnt by all processes
-when a process can only learn a value that has beed chosen. 
+when a process can only learn a value that has beed chosen.
 
+\paragraph{}
 The following content of this section explains 
 Paxos algorithm based on \cite{fischer1983consensus}. 
-In their work, principles are given to solve the consensus problem. 
-These principles require a proposal approach 
+In their work, they make two assumptions, 
+based on that, they then give principles to solve the consensus problem. 
+These principles require a proposing approach 
 of which each proposal has an ordered number \textit{n} 
 and a proposal value \textit{v}. 
 The principles also require three classes of agents 
 which are proposers, acceptors and learners. 
 There are two phases when choosing a value.
-Phase1 is to \textit{prepare} a proposal by requesting a majority of acceptors. 
-Phase2 is to ask the majority to \textit{accept} this proposal.
-Any of this majority can either accept or decline it.
+\textit{Phase1} is to \textit{prepare} a proposal 
+by requesting a majority of acceptors. 
+\textit{Phase2} is to ask the majority to \textit{accept} this proposal.
+In this phase, any acceptor among the majority can 
+either accept or decline the \textit{accept} request.
 
-The principles are given here and will be applied later with explanations,
+\subsection{Two Assumptions}
+\begin{quote}
+  \begin{assumption}{1}{F}\label{as:1}
+    Processes run asynchronously. 
+    They may have arbitrary running speed, may fail and may restart.
+  \end{assumption}
+  \begin{assumption}{2}{F}\label{as:2}
+    Processes can communicate with each other by message passing. 
+    Messages can take arbitrarily long to be delivered. 
+    Messages can be duplicated, can be lost, but can not be corrupted.
+  \end{assumption}
+\end{quote}
+\subsection{Two Principles}
+
+The principles are given here and will be applied later,
 \begin{quote}
   P1. An acceptor must accept the first proposal that it receives.
   \begin{quote}
     a. An acceptor can accept a proposal numbered \textit{n} 
-      iff it has not responded to a prepare request 
+      iff it has not responded to a \textit{prepare} request 
       having a number greater than \textit{n}.
   \end{quote}
   P2. If a proposal with value \textit{v} is chosen, 
@@ -350,25 +404,79 @@ The principles are given here and will be applied later with explanations,
 
 To achieve the consensus, there are three classes of agents 
 which are proposers, acceptors and learners. 
-They are not mutually exclusive, in other words, a process can be 
-in one or more all classes at a time.
+When a process proposes a proposal, 
+it is included in the class of proposers.
+When a process receive requests from any of the proposers,
+it is then included in the class of acceptors.
+And when a process learn a chosen value, 
+it is included in the class of learners.
+These three cases can happen simultaneously, i.e.
+a process can propose, receive requests or 
+learn a chosen value at the same time.
+Thus the three classes of agents are 
+not mutually exclusive for a single process.
 
-A process is \textit{persistent}---it cannot forget what it has accepted.
 
-  \subsubsection{Proposer}
+\subsection{Implementation}
+\subsubsection{Choosing A Value}\label{Choosing}
+The Paxos algorithm \cite{lamport1998part} chooses a leader 
+from the processes of assumption \ref{as:2}. 
+This leader is the leader of the class of proposers and 
+also the leader of the class of learners at the same time. 
+A proposal is tagged with an ordered number \textit{n} and a value \textit{v}.
+The proposal will be passed from one proposer to the leader. 
+This leader is in charge of requesting a majority of accepters to ask for 
+acceptance.
+The majority can be generated by the algorithm \cite{keidar2001cost}.
+A proposal will be requested two times to finally be chosen.
+At the first time request, named \textit{prepare} request, 
+an acceptor should respond the proposer leader with a \textit{promise} respond.
+Once get \textit{promise} respond from a majority 
+(this majority could be different from the requested one),
+the proposer leader requests each \textit{promised} acceptor 
+in the majority with an \textit{accept} request 
+to confirm the acceptance of this proposal.
+The acceptor which receives this \textit{accept} request 
+will accept this proposal based on $P1^a$. 
+And no matter it accepts it or not, it should respond the proposer leader to
+confirm their reaction.
+If a proposal was proposed, i.e. a value was chosen, 
+then it comes to learn it.
 
-  \subsubsection{Acceptor}
-
-  \subsubsection{Learner}
-
+\subsubsection{Learning A Value}
+There are three easy approaches to learn a value.
+The first, in \textit{Phase2}, when acceptors accept a value, 
+they can respond to all the learners. 
+This is immediate but requires a response number at
+the product of the number of learners and the number of acceptors.
+The second, accepters now respond only the leader of learners. 
+However, this is unreliable since we have the assumption\ref{as:2}.
+It brings us to the third way, which is to have a set of leaders of learners
+combining the benefits of the other approaches without lots of message passing.
+\paragraph{}
+The three ways above are all passive in the perspective of a learner when
+it is actually be notified what the chosen value is.
+If a learner want a chosen value itself, 
+it can get an another agent to be  a proposer 
+to propose a proposal using the above algorithm. 
 \subsection{Protocol}
-
+\cite{PaxosMadeSwitch-y} uses UDP to pass messages, 
+they think Paxos does not require reliable communications, 
+so using TCP is unnecessary.
 \subsection{Issues}
-
-  \subsubsection{Contention}
+Because of assumption\ref{as:1} and 
+the use of a quorum of acceptors \cite{jalili2014practical}, 
+with that acceptors handling messages sequentially,
+performance hiccups may occurs when it takes time for slower acceptors 
+to catch up.
+\subsubsection{Contention}
 
 \subsection{Optimisations}
-
+To prevent failures described in assumption\ref{as:1}, 
+stable storage is used by both proposers and acceptors.
+The highest-numbered proposal is always stored in a proposer's stable storage.
+The intended response is always stored in an acceptor's stable storage
+before it responds.
 
 \section{Raft algorithm} \label{sec:raft}
 The Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
