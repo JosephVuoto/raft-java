@@ -10,6 +10,7 @@
 \usepackage{tikz}
 \usepackage{amsthm}
 \usepackage{leftidx}
+\usepackage{latexsym}
 \usetikzlibrary{shapes.geometric, arrows}
 
 \parindent 0pt
@@ -284,33 +285,157 @@ all possible faults in the system model. The hierarchy of different faults
 \section{Relevant Problems} \label{sec:relevant-problems}
 
 The consensus problem is the key to many problems in distributed computing, 
-making effective solutions to it highly desirable
-\cite{fritzke2001consensus}
-
-The consensus problem lies at the core of many problems in distributed
-computing, making effective solutions to it highly desirable
-\cite{fischer1985impossibility}. To motivate consensus in context, related
-problems---highlighting useful applications in distributed computing---are
-discussed in this section.
+making effective solutions to it highly desirable\cite{fritzke2001consensus}.To 
+motivate consensus in context, related problems—highlighting useful applications 
+in distributed computing—are discussed in this section. The following four 
+issues are all related to consistency problem. They are reliable multicast, 
+membership protocol (failure detector), leader election and mutual exclusion. 
+The designer of distributed system should solve these problems primarily to 
+ensure the stability and unity of the system.
 
 \subsection{Reliable Multicast}
 
-Ensuring that all processes receive updates in the same order.
+Reliable Multicast provide processes communication primitives so that they can 
+broadcast and deliver messages in such a way that processes consistent not only 
+on the set of messages they deliver but also on the order of message deliveries
+\cite{fritzke2001consensus}. Usually, the problem of reliability is addressed by 
+considering various types of reliability protocols. The problem of ordering 
+properties are usually as follows.\cite{garcia1991ordered}
+
+\begin{itemize}
+  \item \textbf{Single source ordering}: If messages are from the same source 
+  site, and they are sent to the same multicast group, then they should be 
+  received by all target processes in the same order. 
+  \item \textbf{Multiple source ordering}: If messages are from different 
+  source sites, and they are sent to the same multicast group, 
+  then they should be received by all target processes in the same order. 
+  \item \textbf{Multiple group ordering}: If two messages are from different 
+  source sites, and they are sent to different but overlapping multicast groups, 
+  they should be received by all target processes in the same order.
+\end{itemize}
+
+Ordering in multicast is important, booking, banking, inventory and E-commerce 
+are great applications built on distributed systems that require consistent 
+message order between processes. In addition, ordered communication primitives 
+can simplify the design of distributed application and reduce the possibility of 
+related bugs due to synchronization or concurrency\cite{garcia1991ordered}. It 
+is with these motivations that we will consider a reliable multicast technique 
+when we choose consensus algorithms.
 
 \subsection{Membership/Failure Detection}
 
-Ensuring that every process has a local record containing every other process.
-Failures should be detected and records should be updated.
+Since it is impossible to safely distinguish between a crashed process and a 
+slow process in an asynchronous distributed system, it is impossible to design 
+a deterministic consensus algorithm in an asynchronous distributed system, even 
+in the case of a single process crash failure\cite{fischer1985impossibility}. 
+This impossibility prompted many researchers to propose a minimum set of 
+assumptions. As long as these assumptions are satisfied by the asynchronous 
+distributed system, the consensus problem can be solved as well. The unreliable 
+fault detector gives the answer to this challenge\cite{chandra1996unreliable}. 
+
+\paragraph{}
+An unreliable failure detector consists of a set of oracles: every process has 
+an oracle to provide a list of processes that are suspected to have crashed. 
+racle will make mistakes, such as not suspecting a process that has crashed, or 
+suspecting a process that has not crashed. When the oracle of the process 
+p$_{i}$ suspects that p$_{j}$ crashed, we say that p$_{i}$ suspects p$_{j}$. 
+The mistakes of the failure detector are typically defined by two properties:
+
+\begin{itemize}
+  \item \textbf{Completeness}: In the end, crashed processes should be 
+  suspected. 
+  \item \textbf{Accuracy}: Limit wrong suspicion of well-running processes. 
+\end{itemize}
+
+Chandra and Toueg\cite{chandra1996unreliable} defined several classes of failure 
+detectors. One of them is named as $\diamond$S with following two properties:
+
+\begin{itemize}
+  \item \textbf{Strong completeness}: Ultimately, all crashed processes are 
+  constantly suspected by every well-running process.
+  \item \textbf{Eventual weak accuracy}: Ultimately, majority of well-running 
+  processes are never suspected by any well-running processes.
+\end{itemize}
+
+In practice, if a process does not receive a message response before the timeout 
+occurs, the message sending process suspects that the message receiving process 
+has crashed. This can satisfy strong completeness. However, there is no 
+guarantee of accurate process crash detection. In Raft and Paxos part, we will 
+discuss how these two algorithm handle failure detection in detail respectively.
 
 \subsection{Leader Election}
 
-Deciding on a leader among all processes, with all processes being aware of
-who the leader is.
+Leader election is to elect a leader in a group of processes and let all the 
+processes of the group agree to the leader. A leader is the coordinator among 
+processes and there can only be one leader at a time. In distributed system, 
+each node must exchange messages with other nodes in the network to make a 
+decision. However, this method of communication between nodes is time-consuming, 
+and when consistency between all nodes is required, coordination between nodes 
+becomes difficult. Therefore, choose a leader to manage the access of shared 
+resources is necessary.The implementation of leader election should follow two 
+basic properties\cite{nugraheni2009formal}:
+
+\begin{itemize}
+  \item \textbf{Safety}: There will never be two or more leaders at the same 
+  time.
+  \item \textbf{Liveness}: The election algorithm always ends, and each process 
+  knows the leader who is ultimately elected.
+\end{itemize}
+
+In the leader election algorithm, the leader is usually selected according to 
+some criteria, for example, the node with the largest 
+identifier\cite{effatparvar2010improved}. After the leader is elected, the node 
+will reach a state called termination state. There are two such states, namely 
+the elected state and the non-elected state. When a node is in any state, 
+it always maintains that state. Moreover, when the leader fails, the leader 
+election mechanism can help to dynamically elect a new leader. Also in Raft and 
+Paxos part, we will discuss how these two algorithm handle leader election in 
+detail respectively.
 
 \subsection{Mutual Exclusion}
 
-Ensuring that simultaneous access to a resource does not occur (exclusive
-access).
+The distributed mutual exclusion algorithm guarantees mutually exclusive access 
+to a critical section among a number of competing 
+processes\cite{lamport1987fast}. A mutual exclusion algorithm should meet the 
+following principles\cite{velazques1993survey}: 
+
+\begin{itemize}
+  \item \textbf{}Only one process can be allowed to access its critical 
+  section at the same time.
+  \item \textbf{}If there is no process in the critical section, any 
+  process asking an access to critical part must be allowed within a limited 
+  time. 
+  \item \textbf{}When a competing process request to access the critical 
+  sections concurrently, it cannot be put off indefinitely.
+  \item \textbf{}A requesting process cannot be prevented by another process 
+  from entering critical section within a limited delay. 
+\end{itemize}
+
+In summary, an algorithm must provide mutually exclusive access to a resource, 
+ensure the freedom of deadlock, ensure the freedom of starvation, and must 
+provide a certain fairness in the order of granting requests. Mutually exclusive 
+algorithms are divided into three categories:
+
+\begin{itemize}
+  \item \textbf{Token-based algorithm}: All processes share a token, and only the 
+  process that obtains the token can enter the critical section. The safety, 
+  liveness, and fairness of such algorithms are easily guaranteed. But there is 
+  a disadvantage is that the token is lost, there is only one token in the 
+  system, after the loss, you need to regenerate and ensure that the generated 
+  token is still the only one in the system. 
+  \item \textbf{Non-token-based algorithm}: Also called Permission-based. It is 
+  through the exchange of messages between processes to determine whether they 
+  can enter the critical section. 
+  \item \textbf{Quorum-based algorithm}: The Quorum algorithm is actually a 
+  Non-token-based algorithm, but the principle of the quorum algorithm is 
+  different from other Non-token-based algorithms, so it is taken out 
+  separately. The idea of Quorum is very simple, a collection of multiple 
+  processes form a quorum, there are multiple quorum in the system, Any two 
+  quorums will contain at least one common process, that is, the intersection 
+  is not empty. Whether or not to enter the critical section depends on the 
+  intersection process of quorum. 
+\end{itemize}
+
 
 
 \section{Paxos Algorithm} \label{sec:paxos}
