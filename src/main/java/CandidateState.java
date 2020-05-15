@@ -19,10 +19,10 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// TODO: determine whether to vote for the caller. if yes, then the node should
 		// go back to follower state, if not, return the current term number.
-		return 0;
+		return null;
 	}
 
 	/**

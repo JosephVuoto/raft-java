@@ -44,11 +44,9 @@ public abstract class AbstractState {
 	 * @param candidateId  candidate requesting vote
 	 * @param lastLogIndex index of candidate’s last log entry
 	 * @param lastLogTerm  term of candidate’s last log entry
-	 * @return if the node votes for the candidate, returns 0;
-	 * if rejects the vote, returns its currentTerm,
-	 * for candidate to update itself
+	 * @return VoteResponse object containing whether the vote was granted and the recipient's current term
 	 */
-	abstract public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm);
+	abstract public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm);
 
 	/**
 	 * Invoked by leader to replicate log entries; also used as heartbeat.
@@ -65,4 +63,17 @@ public abstract class AbstractState {
 	 */
 	abstract public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
 	                                  int leaderCommit);
+
+	/**
+	 * Immutable class to represent a response to a vote request
+	 */
+	public static class VoteResponse {
+		public final boolean voteGranted;
+		public final int currentTerm;
+
+		public VoteResponse(boolean voteGranted, int currentTerm) {
+			this.voteGranted = voteGranted;
+			this.currentTerm = currentTerm;
+		}
+	}
 }

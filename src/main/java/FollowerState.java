@@ -19,9 +19,9 @@ public class FollowerState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// TODO: determine whether to vote for the caller and update the timer
-		return 0;
+		return null;
 	}
 
 	/**
