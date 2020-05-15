@@ -32,10 +32,18 @@ public class LeaderState extends AbstractState {
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
 	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
-		// TODO: if receive this RPC from a stale candidate (whose term is less
-		// than its term), send the current term number to reject the vote. otherwise
-		// go back to follower state
-		return null;
+		// deny vote if requested from a stale candidate (term < currentTerm), the candidate's log is not up to date
+		// (lastLogIndex < commitIndex) or the candidate is competing in the same election term (term == currentTerm);
+		// this node has already won the election for currentTerm since it's the leader
+		if (term <= currentTerm || lastLogIndex < commitIndex)
+			return new VoteResponse(false, currentTerm);
+
+		// otherwise, this node's term is out of date; revert to follower and grant vote
+		node.setState(new FollowerState(node));
+		// rectify term of this node based on candidate
+		currentTerm = term;
+		votedFor = candidateId;
+		return new VoteResponse(true, currentTerm);
 	}
 
 	/**
