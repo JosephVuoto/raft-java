@@ -1,4 +1,6 @@
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LeaderState extends AbstractState {
@@ -23,7 +25,21 @@ public class LeaderState extends AbstractState {
 	 * regularly
 	 */
 	public void start() {
-		// TODO: initialize the leader state
+		// TODO: obtain the list of all nodes in the cluster (dummy placeholder below)
+		List<NodeImpl> nodes = new ArrayList<>();
+
+		// initialise nextIndex and matchIndex with default initial values
+		for (NodeImpl remoteNode : nodes) {
+			// skip self
+			if (remoteNode == node)
+				continue;
+
+			int remoteId = remoteNode.getNodeId();
+			nextIndex.put(remoteId, node.getRaftLog().getLastEntryIndex() + 1);
+			matchIndex.put(remoteId, 0);
+		}
+
+		// TODO: setup periodic heartbeat
 	}
 
 	/**
