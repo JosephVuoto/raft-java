@@ -4,23 +4,21 @@ public abstract class AbstractState {
 	/* time interval for the leader to send heartbeat messages */
 	protected static final int HEART_BEAT_INTERVAL = 500;
 
-	/* timeout for for the follower to start a new election, this timeout should be
-	 * random to prevent live lock. we define a upper bound and lower bound here  */
+	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
+	 * an upper and lower bound here  */
 	protected static final int ELECTION_TIME_OUT_MIN = 1000;
 	protected static final int ELECTION_TIME_OUT_MAX = 2000;
-	/* the actuall election timeout */
+	/* the actual election timeout */
 	protected static int electionTimeout;
-	/* latest term server has seen (initialized to 0 on first boot, increases monotonically)
-	    updated on stable storage before responding to RPCs */
+	/* latest term server has seen (initialized to 0 on first boot, increases monotonically) updated on stable storage
+	 * before responding to RPCs */
 	protected static int currentTerm = 0;
-	/* candidateId that received vote in current term (or -1 if none). updated on stable
-	    storage before responding to RPCs */
+	/* candidateId that received vote in current term (or -1 if none). updated on stable storage before responding to
+	 * RPCs */
 	protected static int votedFor = -1;
-	/* index of highest log entry known to be committed (initialized to 0, increases
-	    monotonically) */
+	/* index of highest log entry known to be committed (initialized to 0, increases monotonically) */
 	protected static int commitIndex = 0;
-	/* index of highest log entry applied to state machine (initialized to 0,
-	    increases monotonically) */
+	/* index of highest log entry applied to state machine (initialized to 0, increases monotonically) */
 	protected static int lastApplied = 0;
 
 	/* The node itself */
