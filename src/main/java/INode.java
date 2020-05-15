@@ -43,6 +43,4 @@ public interface INode extends Remote {
                       int prevLogIndex, int prevLogTerm,
                       LogEntry[] entries, int leaderCommit)
             throws RemoteException;
-
-    void setState(AbstractState state);
 }
