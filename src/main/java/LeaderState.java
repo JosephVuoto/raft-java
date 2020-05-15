@@ -51,9 +51,9 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                         int leaderCommit) {
+	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
+	                                    int leaderCommit) {
 		// TODO: similar to requestVote() in this class, check the validation of the RPC
-		return 0;
+		return null;
 	}
 }

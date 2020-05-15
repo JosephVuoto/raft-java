@@ -39,8 +39,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode {
 	 *
 	 * @see INode#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                         int leaderCommit) throws RemoteException {
+	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 

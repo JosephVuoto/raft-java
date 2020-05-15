@@ -38,6 +38,6 @@ public interface INode extends Remote {
 	 *                         occur during the execution of a remote
 	 *                         method call.
 	 */
-	int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries, int leaderCommit)
-	    throws RemoteException;
+	AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                           LogEntry[] entries, int leaderCommit) throws RemoteException;
 }

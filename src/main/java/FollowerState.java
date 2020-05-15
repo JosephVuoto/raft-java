@@ -1,5 +1,3 @@
-import java.util.Random;
-
 public class FollowerState extends AbstractState {
 
 	public FollowerState(NodeImpl node) {
@@ -29,9 +27,9 @@ public class FollowerState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                         int leaderCommit) {
+	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
+	                                    int leaderCommit) {
 		// TODO: determine whether to append entries from the caller and update the timer
-		return 0;
+		return null;
 	}
 }
