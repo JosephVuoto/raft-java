@@ -53,7 +53,12 @@ public class LeaderState extends AbstractState {
 	 */
 	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
 	                                    int leaderCommit) {
-		// TODO: similar to requestVote() in this class, check the validation of the RPC
-		return null;
+		// revert to follower if this node's term is out of date
+		if (term > currentTerm) {
+			node.setState(new FollowerState(node));
+			currentTerm = term;
+		}
+		// otherwise, deny the request
+		return new AppendResponse(false, currentTerm);
 	}
 }
