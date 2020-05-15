@@ -20,4 +20,14 @@ public class RaftLog {
 		// TODO: implement
 		return 0;
 	}
+
+	/**
+	 * Retrieve the term number associated with a particular log entry.
+	 * @param entryIndex the index of the log entry
+	 * @return the term number associated with the log entry
+	 */
+	public int getTermOfEntry(int entryIndex) {
+		// TODO: implement
+		return 0;
+	}
 }
