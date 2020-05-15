@@ -56,11 +56,10 @@ public abstract class AbstractState {
 	 * @param entries      log entries to store (empty for heartbeat;
 	 *                     may send more than one for efficiency)
 	 * @param leaderCommit leader’s commitIndex
-	 * @return if the node accepts the request, return 0. If rejects the request,
-	 * returns its currentTerm, for leader to update itself
+	 * @return AppendResponse object containing whether the append was successful and the recipient's current term
 	 */
-	abstract public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                  int leaderCommit);
+	abstract public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                             LogEntry[] entries, int leaderCommit);
 
 	/**
 	 * Immutable class to represent a response to a vote request
@@ -72,6 +71,19 @@ public abstract class AbstractState {
 		public VoteResponse(boolean voteGranted, int currentTerm) {
 			this.voteGranted = voteGranted;
 			this.currentTerm = currentTerm;
+		}
+	}
+
+	/**
+	 * Immutable class to represent a response to an append entries request
+	 */
+	public static class AppendResponse {
+		public final boolean success;
+		public final int term;
+
+		public AppendResponse(boolean success, int term) {
+			this.success = success;
+			this.term = term;
 		}
 	}
 }
