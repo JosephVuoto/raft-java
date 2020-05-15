@@ -31,7 +31,7 @@ public class CandidateState extends AbstractState {
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
 	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-							 int leaderCommit) {
+	                         int leaderCommit) {
 		// TODO: if receive this RPC with a higher term number, then go back to follower
 		// state. if not, return the current term number.
 		return 0;

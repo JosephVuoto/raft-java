@@ -11,16 +11,16 @@ public abstract class AbstractState {
 	/* the actuall election timeout */
 	protected static int electionTimeout;
 	/* latest term server has seen (initialized to 0 on first boot, increases monotonically)
-		updated on stable storage before responding to RPCs */
+	    updated on stable storage before responding to RPCs */
 	protected static int currentTerm = 0;
 	/* candidateId that received vote in current term (or -1 if none). updated on stable
-		storage before responding to RPCs */
+	    storage before responding to RPCs */
 	protected static int votedFor = -1;
 	/* index of highest log entry known to be committed (initialized to 0, increases
-		monotonically) */
+	    monotonically) */
 	protected static int commitIndex = 0;
 	/* index of highest log entry applied to state machine (initialized to 0,
-		increases monotonically) */
+	    increases monotonically) */
 	protected static int lastApplied = 0;
 
 	/* The node itself */
@@ -64,5 +64,5 @@ public abstract class AbstractState {
 	 * returns its currentTerm, for leader to update itself
 	 */
 	abstract public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-									  int leaderCommit);
+	                                  int leaderCommit);
 }
