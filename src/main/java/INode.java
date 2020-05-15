@@ -19,7 +19,8 @@ public interface INode extends Remote {
 	 *                         occur during the execution of a remote
 	 *                         method call.
 	 */
-	int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) throws RemoteException;
+	AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
+	    throws RemoteException;
 
 	/**
 	 * Invoked by leader to replicate log entries; also used as heartbeat.

@@ -29,7 +29,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode {
 	 *
 	 * @see INode#requestVote(int, int, int, int)
 	 */
-	public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) throws RemoteException {
+	public AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
+	    throws RemoteException {
 		return state.requestVote(term, candidateId, lastLogIndex, lastLogTerm);
 	}
 
