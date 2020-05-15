@@ -11,4 +11,13 @@ public class RaftLog {
 	public int getLastEntryIndex() {
 		return logEntries.size() + 1;
 	}
+
+	/**
+	 * @return the index of the most recent committed log entry.
+	 * Note: indexing begins at 1.
+	 */
+	public int getLastCommittedIndex() {
+		// TODO: implement
+		return 0;
+	}
 }
