@@ -2,6 +2,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class LeaderState extends AbstractState {
 
@@ -34,6 +38,28 @@ public class LeaderState extends AbstractState {
 			int remoteId = remoteNode.getNodeId();
 			nextIndex.put(remoteId, node.getRaftLog().getLastEntryIndex() + 1);
 			matchIndex.put(remoteId, 0);
+		}
+
+		// send initial heartbeat to all nodes
+		ExecutorService heartbeatExecutor = Executors.newFixedThreadPool(nodes.size());
+		List<Callable<AppendResponse>> heartbeats = new ArrayList<>();
+		for (NodeImpl remoteNode : nodes) {
+			heartbeats.add(() -> {
+				int remoteId = remoteNode.getNodeId();
+				int prevLogIndex = nextIndex.get(remoteId) - 1;
+				int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+
+				// TODO: compile entries to be sent to this node
+				List<LogEntry> entries = new ArrayList<>();
+
+				return node.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
+				                          (LogEntry[])entries.toArray(), node.getRaftLog().getLastCommittedIndex());
+			});
+		}
+		try {
+			List<Future<AppendResponse>> responses = heartbeatExecutor.invokeAll(heartbeats);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 		// TODO: setup periodic heartbeat
