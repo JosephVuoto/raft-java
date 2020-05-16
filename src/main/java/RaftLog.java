@@ -30,4 +30,8 @@ public class RaftLog {
 		// TODO: implement
 		return 0;
 	}
+
+	public List<LogEntry> getLogEntries() {
+		return logEntries;
+	}
 }
