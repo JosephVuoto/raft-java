@@ -30,4 +30,18 @@ public class RaftLog {
 		// TODO: implement
 		return 0;
 	}
+
+	public boolean setLogEntries(int startPos, LogEntry[] entries) {
+		//TODO: Not so sure whether I should write it here.
+		if (startPos < 0 || startPos > logEntries.size()) return false;
+		for (int i = 0; i < entries.length; i++) {
+			if (startPos + i < logEntries.size()) {
+				if (logEntries.get(startPos + i) != entries[i])
+					logEntries.set(startPos + i, entries[i]);
+			} else {
+				logEntries.add(entries[i]);
+			}
+		}
+		return true;
+	}
 }
