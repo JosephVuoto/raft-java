@@ -1,4 +1,6 @@
-public class LogEntry {
+import java.io.Serializable;
+
+public class LogEntry implements Serializable {
 	private int index;
 	private int term;
 	private String command;
