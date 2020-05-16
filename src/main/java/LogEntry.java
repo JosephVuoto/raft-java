@@ -1,9 +1,9 @@
 import java.io.Serializable;
 
-public class LogEntry implements Serializable {
+public class LogEntry<T> implements Serializable {
 	private int index;
 	private int term;
-	private String command;
+	private T command;
 	private boolean committed;
 	// TODO: define the data structure of a log entry
 
@@ -23,11 +23,11 @@ public class LogEntry implements Serializable {
 		this.term = term;
 	}
 
-	public String getCommand() {
+	public T getCommand() {
 		return command;
 	}
 
-	public void setCommand(String command) {
+	public void setCommand(T command) {
 		this.command = command;
 	}
 
