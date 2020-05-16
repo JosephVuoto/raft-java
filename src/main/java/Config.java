@@ -25,16 +25,26 @@ import java.util.List;
  */
 public class Config {
 	/* Current node ID */
-	private int nodeId;
+	public final int nodeId;
 	/* Information of the cluster (other nodes) */
-	private List<NodeInfo> clusterInfo;
+	public final List<NodeInfo> clusterInfo;
+
+	public Config(int nodeId, List<NodeInfo> clusterInfo) {
+		this.nodeId = nodeId;
+		this.clusterInfo = clusterInfo;
+	}
 
 	public static class NodeInfo {
 		/* node ID */
-		private int nodeId;
+		public final int nodeId;
 		/* IP address */
-		private String address;
+		public final String address;
 		/* Port number */
-		private int port;
-	}
+		public final int port;
+
+		public NodeInfo(int nodeId, String address, int port) {
+			this.nodeId = nodeId;
+			this.address = address;
+			this.port = port;
+		}
 }
