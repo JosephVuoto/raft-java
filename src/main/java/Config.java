@@ -47,4 +47,5 @@ public class Config {
 			this.address = address;
 			this.port = port;
 		}
+	}
 }
