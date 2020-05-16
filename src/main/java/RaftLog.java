@@ -18,7 +18,7 @@ public class RaftLog {
 	 * Note: indexing begins at 1.
 	 */
 	public int getLastCommittedIndex() {
-		return lastCommitted == null ? 0 : lastCommitted.getIndex();
+		return lastCommitted == null ? 0 : lastCommitted.index;
 	}
 
 	/**
@@ -27,7 +27,7 @@ public class RaftLog {
 	 * @return the term number associated with the log entry
 	 */
 	public int getTermOfEntry(int entryIndex) {
-		return logEntries.get(entryIndex).getTerm();
+		return logEntries.get(entryIndex).term;
 	}
 
 	/**
@@ -44,7 +44,7 @@ public class RaftLog {
 			throw new MissingEntriesException(fromIndex, getLastEntryIndex());
 		// ensure that committed entries are not overwritten
 		if (fromIndex <= getLastCommittedIndex())
-			throw new OverwriteCommittedEntryException(fromIndex, logEntries.get(getLastCommittedIndex()).getTerm());
+			throw new OverwriteCommittedEntryException(fromIndex, logEntries.get(getLastCommittedIndex()).term);
 
 		// clear any existing entries from index to be overwritten (note: Raft entries start at 1)
 		logEntries.subList(fromIndex - 1, logEntries.size()).clear();
@@ -64,7 +64,7 @@ public class RaftLog {
 			throw new MissingEntriesException(lastToCommit, getLastEntryIndex());
 		for (int i = getLastCommittedIndex(); i < lastToCommit; i++) {
 			lastCommitted = logEntries.get(i);
-			lastCommitted.setCommitted(true);
+			lastCommitted.commit();
 		}
 	}
 
