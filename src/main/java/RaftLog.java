@@ -105,4 +105,8 @@ public class RaftLog {
 			this.lastEntryIndex = lastEntryIndex;
 		}
 	}
+
+	public List<LogEntry> getLogEntries() {
+		return logEntries;
+	}
 }
