@@ -1,3 +1,4 @@
+import java.io.Serializable;
 import java.util.Random;
 
 public abstract class AbstractState {
@@ -64,7 +65,7 @@ public abstract class AbstractState {
 	/**
 	 * Immutable class to represent a response to a vote request
 	 */
-	public static class VoteResponse {
+	public static class VoteResponse implements Serializable {
 		public final boolean voteGranted;
 		public final int currentTerm;
 
@@ -77,7 +78,7 @@ public abstract class AbstractState {
 	/**
 	 * Immutable class to represent a response to an append entries request
 	 */
-	public static class AppendResponse {
+	public static class AppendResponse implements Serializable {
 		public final boolean success;
 		public final int term;
 
