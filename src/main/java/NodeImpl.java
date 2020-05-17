@@ -1,5 +1,6 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.List;
 
 public class NodeImpl extends UnicastRemoteObject implements INode {
 	/* A unique identifier of the node */
@@ -8,6 +9,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode {
 	private AbstractState state;
 	/* log entries */
 	private RaftLog raftLog;
+	/* list of remote nodes in the cluster */
+	private List<INode> remoteNodes;
 
 	/**
 	 * Constructor
@@ -59,5 +62,13 @@ public class NodeImpl extends UnicastRemoteObject implements INode {
 
 	public void setRaftLog(RaftLog raftLog) {
 		this.raftLog = raftLog;
+	}
+
+	public List<INode> getRemoteNodes() {
+		return remoteNodes;
+	}
+
+	public void setRemoteNodes(List<INode> nodes) {
+		remoteNodes = nodes;
 	}
 }
