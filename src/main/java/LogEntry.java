@@ -1,41 +1,29 @@
 import java.io.Serializable;
 
 public class LogEntry<T> implements Serializable {
-	private int index;
-	private int term;
-	private T command;
-	private boolean committed;
-	// TODO: define the data structure of a log entry
+	public final int index;
+	public final int term;
+	public final T command;
+	private boolean committed = false;
 
-	public int getIndex() {
-		return index;
-	}
-
-	public void setIndex(int index) {
+	public LogEntry(int index, int term, T command) {
 		this.index = index;
-	}
-
-	public int getTerm() {
-		return term;
-	}
-
-	public void setTerm(int term) {
 		this.term = term;
-	}
-
-	public T getCommand() {
-		return command;
-	}
-
-	public void setCommand(T command) {
 		this.command = command;
+	}
+
+	public LogEntry(int index, int term, T command, boolean committed) {
+		this.index = index;
+		this.term = term;
+		this.command = command;
+		this.committed = committed;
 	}
 
 	public boolean isCommitted() {
 		return committed;
 	}
 
-	public void setCommitted(boolean committed) {
+	public void commit() {
 		this.committed = committed;
 	}
 }
