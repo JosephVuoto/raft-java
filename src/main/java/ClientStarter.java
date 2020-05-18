@@ -81,7 +81,7 @@ public class ClientStarter {
 
 			// then match options and payload
 			while (true) {
-				// advance the matcher, discarding the already matched portion, then skip over whitespace
+				// advance the matcher, discarding the already matched portion
 				remainder = advanceMatcher(matcher, remainder);
 
 				// try matching an option (e.g. --auto-retry or -a) before the command payload
