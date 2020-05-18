@@ -207,17 +207,17 @@ public class ClientStarter {
 
 		@Override
 		public String toString() {
-			String s = "COMMAND: " + command.toString();
+			StringBuilder s = new StringBuilder("COMMAND: " + command.toString());
 			if (payload != null)
-				s += "\nPAYLOAD: " + payload;
+				s.append("\nPAYLOAD: ").append(payload);
 			if (noArgOptions.size() > 0 || argOptions.size() > 0) {
-				s += "\nARGS:";
+				s.append("\nARGS:");
 				for (Instruction.NoArgOption option : noArgOptions)
-					s += " " + option.toString();
+					s.append(" ").append(option.toString());
 				for (Map.Entry<ArgOption, String> optionWithArg : argOptions)
-					s += " " + optionWithArg.toString();
+					s.append(" ").append(optionWithArg.toString());
 			}
-			return s;
+			return s.toString();
 		}
 	}
 }
