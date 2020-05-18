@@ -16,12 +16,15 @@ public class ClientStarter {
 		while (true) {
 			try {
 				Instruction instruction = parser.parseInstruction(reader.readLine());
+				if (instruction == null) {
+					System.err.println("Invalid instruction");
+					continue;
+				}
 				if (instruction.command == Instruction.Command.QUIT) {
 					break;
 				}
 				// TODO: invoke sendCommand(String command)
-				if (instruction != null)
-					System.out.println(instruction.toString());
+				System.out.println(instruction.toString());
 			} catch (IOException e) {
 				try {
 					reader.close();
@@ -35,7 +38,7 @@ public class ClientStarter {
 	}
 
 	/**
-	 *  Class to parse user instructions
+	 * Class to parse user instructions
 	 */
 	private static class InstructionParser {
 		private static final Map<String, Instruction.Command> commandMap = new HashMap<>();
@@ -54,15 +57,21 @@ public class ClientStarter {
 		 * @return Instruction object (or null if could not be parsed)
 		 */
 		private Instruction parseInstruction(String instruction) {
-			Pattern commandPattern = Pattern.compile("^\\s*\\w+\\s*");
-			Pattern optionPattern = Pattern.compile("(--\\w+(-\\w+)*)|(-\\w)\\s*");
-			Pattern argumentPattern = Pattern.compile("\\w+\\s*");
+			/* command: single word (potentially with hyphens between word chars) */
+			Pattern commandPattern = Pattern.compile("\\s*\\w+(-\\w+)*");
+			/* option: same as command but with leading "--" or "-" */
+			Pattern optionPattern = Pattern.compile("\\s*-{1,2}\\w+(-\\w+)*");
+			/* option argument: single word (potentially with hyphens between word chars) OR multiple words within
+			 * quotes */
+			Pattern argumentPattern = Pattern.compile("\\s*(\\w+(-\\w+)*|\"[-\\w\\s]*\")");
+			/* command payload: multiple words (may include quotes) */
+			Pattern payloadPattern = Pattern.compile("\\s*[\"\\w]+(-[\"\\w]+)*(\\s+[\"\\w]+(-[\"\\w]+)*)*");
 
 			String remainder = instruction;
 
-			// first match the command
+			// match the command
 			Matcher matcher = commandPattern.matcher(remainder);
-			if (!matcher.find())
+			if (!matcher.lookingAt() || !commandMap.containsKey(matcher.group().trim()))
 				return null;
 			Instruction.Command command = commandMap.get(matcher.group().trim());
 
@@ -72,7 +81,7 @@ public class ClientStarter {
 
 			// then match options and payload
 			while (true) {
-				// advance the matcher, discarding the already matched portion
+				// advance the matcher, discarding the already matched portion, then skip over whitespace
 				remainder = advanceMatcher(matcher, remainder);
 
 				// try matching an option (e.g. --auto-retry or -a) before the command payload
@@ -104,8 +113,11 @@ public class ClientStarter {
 				}
 
 				// try matching the command payload if matching as an option fails
-				matcher.usePattern(argumentPattern);
+				matcher.usePattern(payloadPattern);
 				if (matcher.lookingAt()) {
+					if (payload != null)
+						// already matched the payload; invalid instruction input
+						return null;
 					payload = matcher.group().trim();
 
 					// options may be included after the payload; attempt to match
@@ -114,13 +126,18 @@ public class ClientStarter {
 
 				break;
 			}
+
+			// ensure that there's nothing left on the line
+			matcher.usePattern(Pattern.compile("\\w*$"));
+			if (!matcher.lookingAt())
+				return null;
 			return new Instruction(command, noArgOptions, argOptions, payload);
 		}
 
 		/**
 		 * Advance a Matcher to start matching from the end of the previously matched Pattern.
 		 * @param matcher the Matcher object
-		 * @param input the input string previously provided to the matcher
+		 * @param input   the input string previously provided to the matcher
 		 * @return the remainder of the input string (substring after portion matched)
 		 */
 		private String advanceMatcher(Matcher matcher, String input) {
@@ -143,6 +160,7 @@ public class ClientStarter {
 			noArgOptionMap.put("--auto-retry", Instruction.NoArgOption.AUTO_RETRY);
 			noArgOptionMap.put("-a", Instruction.NoArgOption.AUTO_RETRY);
 		}
+
 		private static void registerArgOptions() {
 			argOptionMap.put("--node", Instruction.ArgOption.NODE_DIRECT);
 			argOptionMap.put("-n", Instruction.ArgOption.NODE_DIRECT);
