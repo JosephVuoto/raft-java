@@ -1,3 +1,7 @@
+import sun.rmi.runtime.Log;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.*;
 
 public class FollowerState extends AbstractState {
@@ -84,21 +88,17 @@ public class FollowerState extends AbstractState {
 		//	  but different terms), delete the existing entry and all that
 		//    follow it (§5.3)
 		// 4. Append any new entries not already in the log
-		// TODO: have to discuss about this interface
-		node.getRaftLog().setLogEntries(prevLogIndex + 1, entries);
+		try {
+			node.getRaftLog().writeEntries(prevLogIndex, new ArrayList<LogEntry>(Arrays.asList(entries)));
+		} catch (RaftLog.MissingEntriesException e) {
+			System.out.println("Entries missing: " + e);
+		} catch (RaftLog.OverwriteCommittedEntryException e) {
+			System.out.println("Overwrite Committed Entry is not allow: " + e);
+		}
 		// 5. If leaderCommit > commitIndex, set commitIndex =
 		// min(leaderCommit, index of last new entry)
 		if (leaderCommit > commitIndex) commitIndex = Math.min(leaderCommit, node.getRaftLog().getLastEntryIndex());
 		return new AppendResponse(true, currentTerm);
-	}
-
-	/**
-	 * Become candidate if election timeout
-	 */
-	private void becomeCandidate() {
-		//TODO: need to check with Qifan
-		++currentTerm;
-		node.setState(new CandidateState(node));
 	}
 
 	/**
@@ -133,7 +133,9 @@ public class FollowerState extends AbstractState {
 		electionScheduleFuture = scheduledExecutorService.schedule(new Runnable() {
 			@Override
 			public void run() {
-				becomeCandidate();
+				// Become candidate if election timeout
+				++currentTerm;
+				node.setState(new CandidateState(node));
 			}
 		}, electionTimeout, TimeUnit.MILLISECONDS);
 	}
