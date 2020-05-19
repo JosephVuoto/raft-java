@@ -1,20 +1,16 @@
-import java.util.ArrayList;
+import java.rmi.RemoteException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public class LeaderState extends AbstractState {
 
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */
-	private Map<Integer, Integer> nextIndex;
+	private Map<INode, Integer> nextIndex;
 	/* for each server, index of highest log entry known to be replicated on server (initialized to 0, increases
 	 * monotonically). The data structure is <node id, index of highest log entry...>. Reinitialized after election */
-	private Map<Integer, Integer> matchIndex;
+	private Map<INode, Integer> matchIndex;
 
 	public LeaderState(NodeImpl node) {
 		super(node);
@@ -26,43 +22,13 @@ public class LeaderState extends AbstractState {
 	 * Initialize attributes and setup a timer to send heartbeat message regularly
 	 */
 	public void start() {
-		// TODO: obtain the list of all nodes in the cluster (dummy placeholder below)
-		List<NodeImpl> nodes = new ArrayList<>();
-
 		// initialise nextIndex and matchIndex with default initial values
-		for (NodeImpl remoteNode : nodes) {
-			// skip self
-			if (remoteNode == node)
-				continue;
-
-			int remoteId = remoteNode.getNodeId();
-			nextIndex.put(remoteId, node.getRaftLog().getLastEntryIndex() + 1);
-			matchIndex.put(remoteId, 0);
+		for (INode remoteNode : node.getRemoteNodes()) {
+			nextIndex.put(remoteNode, node.getRaftLog().getLastEntryIndex() + 1);
+			matchIndex.put(remoteNode, 0);
 		}
 
-		// send initial heartbeat to all nodes
-		ExecutorService heartbeatExecutor = Executors.newFixedThreadPool(nodes.size());
-		List<Callable<AppendResponse>> heartbeats = new ArrayList<>();
-		for (NodeImpl remoteNode : nodes) {
-			heartbeats.add(() -> {
-				int remoteId = remoteNode.getNodeId();
-				int prevLogIndex = nextIndex.get(remoteId) - 1;
-				int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
-
-				// TODO: compile entries to be sent to this node
-				List<LogEntry> entries = new ArrayList<>();
-
-				return node.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
-				                          (LogEntry[])entries.toArray(), node.getRaftLog().getLastCommittedIndex());
-			});
-		}
-		try {
-			List<Future<AppendResponse>> responses = heartbeatExecutor.invokeAll(heartbeats);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		// TODO: setup periodic heartbeat
+		initiateHeartbeats();
 	}
 
 	/**
@@ -78,10 +44,7 @@ public class LeaderState extends AbstractState {
 			return new VoteResponse(false, currentTerm);
 
 		// otherwise, this node's term is out of date; revert to follower and grant vote
-		node.setState(new FollowerState(node));
-		// rectify term of this node based on candidate
-		currentTerm = term;
-		votedFor = candidateId;
+		resign(term, candidateId);
 		return new VoteResponse(true, currentTerm);
 	}
 
@@ -93,11 +56,92 @@ public class LeaderState extends AbstractState {
 	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
 	                                    int leaderCommit) {
 		// revert to follower if this node's term is out of date
-		if (term > currentTerm) {
-			node.setState(new FollowerState(node));
-			currentTerm = term;
-		}
+		if (term > currentTerm)
+			resign(term);
+
 		// otherwise, deny the request
 		return new AppendResponse(false, currentTerm);
+	}
+
+	private void initiateHeartbeats() {
+		for (INode remoteNode : node.getRemoteNodes()) {
+			int prevLogIndex = nextIndex.get(remoteNode) - 1;
+			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+			LogEntry[] logEntries = {};
+			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
+
+			CompletableFuture
+			    .supplyAsync(() -> {
+				    try {
+					    return remoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
+					                                    logEntries, lastCommitted);
+				    } catch (RemoteException e) {
+					    return null;
+				    }
+			    })
+			    .thenAccept(response -> {
+				    // stop if no longer leader
+				    if (node == null)
+					    return;
+
+				    updateRemoteNodeInfo(remoteNode, null, response);
+				    // TODO: schedule the next heartbeat
+			    });
+		}
+	}
+
+	/**
+	 * Update the information known about a remote node's log.
+	 * This method is invoked as part of a CompletableFuture upon receiving the result of an appendEntries RMI call.
+	 * @param remoteNode      the node upon which the appendEntries RMI call was called
+	 * @param latestEntrySent the latest entry sent to the remote node
+	 * @param response        the result of the RMI call
+	 */
+	private void updateRemoteNodeInfo(INode remoteNode, LogEntry latestEntrySent, AppendResponse response) {
+		if (response == null)
+			return;
+
+		// revert to follower if response indicates a higher term
+		if (response.term > currentTerm) {
+			resign(response.term);
+			return;
+		}
+
+		// if the append was successful, update the highest log entry known to be replicated
+		if (response.success) {
+			// empty heartbeat case
+			if (latestEntrySent == null)
+				return;
+
+			// non-empty heartbeat case
+			matchIndex.put(remoteNode, latestEntrySent.index);
+			nextIndex.put(remoteNode, latestEntrySent.index + 1);
+			return;
+		}
+
+		// otherwise, send one more previous log next time
+		int revisedNextIndex = Integer.max(nextIndex.get(remoteNode) - 1, 0);
+		nextIndex.put(remoteNode, revisedNextIndex);
+	}
+
+	/**
+	 * Perform cleanup actions when stepping down from leader.
+	 * @param supersedingTerm the higher term received from a remote node
+	 */
+	private void resign(int supersedingTerm) {
+		node.setState(new FollowerState(node));
+		currentTerm = supersedingTerm;
+		// indicate no longer being leader; this reference is checked before scheduling the next heartbeat
+		node = null;
+	}
+
+	/**
+	 * Perform cleanup actions when stepping down from leader, having voted for a candidate in a superseding term.
+	 * @param supersedingTerm the higher term received from a remote node
+	 * @param exitVote        the candidate granted a vote by this node
+	 */
+	private void resign(int supersedingTerm, int exitVote) {
+		resign(supersedingTerm);
+		votedFor = exitVote;
 	}
 }
