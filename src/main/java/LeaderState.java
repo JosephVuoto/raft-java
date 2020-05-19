@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class LeaderState extends AbstractState {
-
+	private final int MAJORITY_THRESHOLD;
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */
 	private final Map<INode, Integer> nextIndex;
@@ -14,6 +14,8 @@ public class LeaderState extends AbstractState {
 
 	public LeaderState(NodeImpl node) {
 		super(node);
+		// set majority threshold to ceil(cluster size / 2)
+		MAJORITY_THRESHOLD = node.getRemoteNodes().size() / 2 + 1;
 		nextIndex = new HashMap<>();
 		matchIndex = new HashMap<>();
 	}
@@ -85,6 +87,7 @@ public class LeaderState extends AbstractState {
 					    return;
 
 				    updateRemoteNodeInfo(remoteNode, null, response);
+				    checkReplication();
 				    // TODO: schedule the next heartbeat
 			    });
 		}
@@ -122,6 +125,37 @@ public class LeaderState extends AbstractState {
 		// otherwise, send one more previous log next time
 		int revisedNextIndex = Integer.max(nextIndex.get(remoteNode) - 1, 0);
 		nextIndex.put(remoteNode, revisedNextIndex);
+	}
+
+	/**
+	 * Commit entries which have been replicated by a majority.
+	 * Note: only commit if a majority of nodes has an entry from the current term.
+	 */
+	private void checkReplication() {
+		for (int i = node.getRaftLog().getLastCommittedIndex(); i > commitIndex; i--) {
+			if (majorityHasLogEntry(i) && node.getRaftLog().getTermOfEntry(i) == currentTerm) {
+				try {
+					node.getRaftLog().commitToIndex(i);
+				} catch (RaftLog.MissingEntriesException e) {
+					// TODO: logging (execution should never reach here)
+					return;
+				}
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Determine whether a log entry has been replicated on a majority of nodes.
+	 * @param i index of the log entry to be checked
+	 * @return true if a majority has replicated the log entry, else false
+	 */
+	private boolean majorityHasLogEntry(int i) {
+		int replicatedOn = 0;
+		for (Map.Entry<INode, Integer> entry : matchIndex.entrySet())
+			if (entry.getValue() >= i && ++replicatedOn >= MAJORITY_THRESHOLD)
+				return true;
+		return false;
 	}
 
 	/**
