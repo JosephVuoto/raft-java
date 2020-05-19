@@ -1,10 +1,9 @@
-import sun.rmi.runtime.Log;
-
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
+import sun.rmi.runtime.Log;
 
 public class FollowerState extends AbstractState {
 	// Use for remembering the last leader id
@@ -24,7 +23,8 @@ public class FollowerState extends AbstractState {
 	 */
 	public FollowerState(NodeImpl node, int term) {
 		super(node);
-		if (currentTerm < term) currentTerm = term;
+		if (currentTerm < term)
+			currentTerm = term;
 	}
 
 	/**
@@ -48,9 +48,11 @@ public class FollowerState extends AbstractState {
 	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// Rules for all server
 		resetElectionTimer();
-		if (term > currentTerm) changeTerm(term);
+		if (term > currentTerm)
+			changeTerm(term);
 		// Reply false if term < currentTerm (§5.1)
-		if (term < currentTerm) return new VoteResponse(false, currentTerm);
+		if (term < currentTerm)
+			return new VoteResponse(false, currentTerm);
 		// Grant vote conditions (§5.2, §5.4):
 		// 	 1. votedFor is null or candidateId,
 		// 	 2. candidate’s log is at least as up-to-date as receiver’s log.
@@ -58,8 +60,9 @@ public class FollowerState extends AbstractState {
 		//        1. logs have entries with later term
 		//        2. logs end with same term and the longer one is more up to date.
 		int currLastCommittedLogIndex = node.getRaftLog().getLastCommittedIndex();
-		if ((votedFor == -1 || votedFor == candidateId) && (lastLogTerm > currLastCommittedLogIndex
-				|| (lastLogTerm == currLastCommittedLogIndex && lastLogIndex >= commitIndex))) {
+		if ((votedFor == -1 || votedFor == candidateId) &&
+		    (lastLogTerm > currLastCommittedLogIndex ||
+		     (lastLogTerm == currLastCommittedLogIndex && lastLogIndex >= commitIndex))) {
 			changeTerm(term);
 			votedFor = candidateId;
 			return new VoteResponse(true, currentTerm);
@@ -79,7 +82,8 @@ public class FollowerState extends AbstractState {
 		currentLeaderId = leaderId;
 		// Rules for all server
 		resetElectionTimer();
-		if (term > currentTerm) changeTerm(term);
+		if (term > currentTerm)
+			changeTerm(term);
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
@@ -100,7 +104,8 @@ public class FollowerState extends AbstractState {
 		}
 		// 5. If leaderCommit > commitIndex, set commitIndex =
 		// min(leaderCommit, index of last new entry)
-		if (leaderCommit > commitIndex) commitIndex = Math.min(leaderCommit, node.getRaftLog().getLastEntryIndex());
+		if (leaderCommit > commitIndex)
+			commitIndex = Math.min(leaderCommit, node.getRaftLog().getLastEntryIndex());
 		return new AppendResponse(true, currentTerm);
 	}
 
