@@ -4,6 +4,7 @@ import java.util.List;
  * Data structure of the config json file. the json will look like this:
  * {
  *     "nodeId":1,
+ *     "port":2222,
  *     "clusterInfo":[
  *         {
  *             "nodeId":2,
@@ -28,10 +29,13 @@ public class Config {
 	public final int nodeId;
 	/* Information of the cluster (other nodes) */
 	public final List<NodeInfo> clusterInfo;
+	/* Local port */
+	public final int port;
 
-	public Config(int nodeId, List<NodeInfo> clusterInfo) {
+	public Config(int nodeId, List<NodeInfo> clusterInfo, int port) {
 		this.nodeId = nodeId;
 		this.clusterInfo = clusterInfo;
+		this.port = port;
 	}
 
 	public static class NodeInfo {
