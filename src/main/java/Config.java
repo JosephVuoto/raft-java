@@ -25,17 +25,17 @@ import java.util.List;
  * }
  */
 public class Config {
-	/* Current node ID */
-	public final int nodeId;
+	/* Current node ID, null if it is config for client */
+	public final Integer nodeId;
+	/* Local port, null if it is config for client */
+	public final Integer port;
 	/* Information of the cluster (other nodes) */
 	public final List<NodeInfo> clusterInfo;
-	/* Local port */
-	public final int port;
 
-	public Config(int nodeId, List<NodeInfo> clusterInfo, int port) {
+	public Config(Integer nodeId, Integer port, List<NodeInfo> clusterInfo) {
 		this.nodeId = nodeId;
-		this.clusterInfo = clusterInfo;
 		this.port = port;
+		this.clusterInfo = clusterInfo;
 	}
 
 	public static class NodeInfo {
@@ -50,6 +50,12 @@ public class Config {
 			this.nodeId = nodeId;
 			this.address = address;
 			this.port = port;
+		}
+
+		@Override
+		public String toString() {
+			return "NodeInfo: {"
+			    + " nodeId = " + nodeId + ", address = '" + address + '\'' + ", port = " + port + " }";
 		}
 	}
 }

@@ -14,7 +14,11 @@ import java.util.concurrent.Executors;
  */
 public class NodeStarter {
 	public static void main(String[] args) {
-		Config config = JsonFileUtil.readConfig("./config.json");
+		String configPath = "./config.json";
+		if (args.length == 1) {
+			configPath = args[0];
+		}
+		Config config = JsonFileUtil.readConfig(configPath);
 		int nodeId = config.nodeId;
 		int port = config.port;
 		/* The number of other nodes */
