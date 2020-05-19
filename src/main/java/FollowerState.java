@@ -1,7 +1,9 @@
 import sun.rmi.runtime.Log;
 
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 
 public class FollowerState extends AbstractState {
@@ -30,6 +32,7 @@ public class FollowerState extends AbstractState {
 	 * timeout timer for heartbeat and start it
 	 */
 	public void start() {
+		// Use for election timeout
 		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 		votedFor = -1;
 		currentLeaderId = -1;
@@ -105,9 +108,18 @@ public class FollowerState extends AbstractState {
 	 * If a client contacts a follower, the follower redirects it to the leader
 	 * @return
 	 */
-	private int redirect2Leader() {
-		// TODO: not so sure when will a client interact with me.
-		return currentLeaderId;
+	private String send2Leader(String command) {
+		// TODO: Currently I don't know when I would get a command;
+		String res = "Fail to write the log";
+		try {
+			INode leader = node.getRemoteNodes().get(currentLeaderId);
+			res = ((IClientInterface)leader).sendCommand(command);
+		} catch (IndexOutOfBoundsException e) {
+			System.out.println("No Such node with the ID: " + e);
+		} catch (RemoteException e) {
+			System.out.println("Cannot reach the remote node: " + e);
+		}
+		return res;
 	}
 
 	/**
