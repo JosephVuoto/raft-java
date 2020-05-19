@@ -37,45 +37,49 @@ public class ClientStarter {
 					break;
 				}
 
-				int nodeDirect = clusterInfo.get(0).nodeId;
-				if (instruction.argOptions.size() > 0) {
-					// TODO: Since there is only possible argOptions type, the first element will be NODE_DIRECT
-					// Cannot think of a better way for now :)
-					nodeDirect = Integer.parseInt(instruction.argOptions.get(0).getValue());
-				}
+				if (instruction.command == Instruction.Command.SEND) {
+					int nodeDirect = clusterInfo.get(0).nodeId;
+					if (instruction.argOptions.size() > 0) {
+						// TODO: Since there is only possible argOptions type, the first element will be NODE_DIRECT
+						// Cannot think of a better way for now :)
+						nodeDirect = Integer.parseInt(instruction.argOptions.get(0).getValue());
+					}
 
-				/* The target remote node */
-				IClientInterface remoteNode;
-				if (!remoteNodes.containsKey(nodeDirect)) {
-					/* Haven't got connection to the node yet */
-					Config.NodeInfo info = null;
-					/* Find information of the node with given id */
-					for (Config.NodeInfo nodeInfo : clusterInfo) {
-						if (nodeInfo.nodeId == nodeDirect) {
-							info = nodeInfo;
+					/* The target remote node */
+					IClientInterface remoteNode;
+					if (!remoteNodes.containsKey(nodeDirect)) {
+						/* Haven't got connection to the node yet */
+						Config.NodeInfo info = null;
+						/* Find information of the node with given id */
+						for (Config.NodeInfo nodeInfo : clusterInfo) {
+							if (nodeInfo.nodeId == nodeDirect) {
+								info = nodeInfo;
+							}
 						}
+						if (info == null) {
+							System.err.println("No such node: " + nodeDirect);
+							continue;
+						}
+						/* Construct a rmi url for the remote node */
+						String remoteUrl = "rmi://" + info.address + ":" + info.port + "/node" + info.nodeId;
+						try {
+							/* Get the INode stub from remote registry */
+							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
+							/* Add to the map. Next time it can get the connection from the map directly */
+							remoteNodes.put(info.nodeId, remoteNode);
+						} catch (NotBoundException | MalformedURLException | RemoteException e) {
+							e.printStackTrace();
+							continue;
+						}
+					} else {
+						remoteNode = remoteNodes.get(nodeDirect);
 					}
-					if (info == null) {
-						System.err.println("No such node: " + nodeDirect);
-						continue;
-					}
-					/* Construct a rmi url for the remote node */
-					String remoteUrl = "rmi://" + info.address + ":" + info.port + "/node" + info.nodeId;
-					try {
-						/* Get the INode stub from remote registry */
-						remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
-						/* Add to the map. Next time it can get the connection from the map directly */
-						remoteNodes.put(info.nodeId, remoteNode);
-					} catch (NotBoundException | MalformedURLException | RemoteException e) {
-						e.printStackTrace();
-						continue;
-					}
-				} else {
-					remoteNode = remoteNodes.get(nodeDirect);
+					/* Invoke sendCommand */
+					// TODO: implement retry
+					remoteNode.sendCommand(instruction.payload);
+				} else if (instruction.command == Instruction.Command.LIST) {
+					// TODO: print a list of commands as instruction
 				}
-				/* Invoke sendCommand */
-				// TODO: implement retry
-				remoteNode.sendCommand(instruction.payload);
 
 			} catch (IOException e) {
 				try {
