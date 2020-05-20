@@ -2,6 +2,7 @@ import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 public class LeaderState extends AbstractState {
 	private final int MAJORITY_THRESHOLD;
@@ -11,6 +12,8 @@ public class LeaderState extends AbstractState {
 	/* for each server, index of highest log entry known to be replicated on server (initialized to 0, increases
 	 * monotonically). The data structure is <node id, index of highest log entry...>. Reinitialized after election */
 	private final Map<INode, Integer> matchIndex;
+	/* a map of each remote node's active pending heartbeat */
+	private final Map<INode, Heartbeat> activeHeartbeats;
 
 	public LeaderState(NodeImpl node) {
 		super(node);
@@ -18,6 +21,7 @@ public class LeaderState extends AbstractState {
 		MAJORITY_THRESHOLD = node.getRemoteNodes().size() / 2 + 1;
 		nextIndex = new HashMap<>();
 		matchIndex = new HashMap<>();
+		activeHeartbeats = new HashMap<>();
 	}
 
 	/**
@@ -65,6 +69,10 @@ public class LeaderState extends AbstractState {
 		return new AppendResponse(false, currentTerm);
 	}
 
+	/**
+	 * Send the initial heartbeat to each remote node.
+	 * This method will also schedule the following heartbeat.
+	 */
 	private void initiateHeartbeats() {
 		for (INode remoteNode : node.getRemoteNodes()) {
 			int prevLogIndex = nextIndex.get(remoteNode) - 1;
@@ -72,25 +80,49 @@ public class LeaderState extends AbstractState {
 			LogEntry[] logEntries = {};
 			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
 
-			CompletableFuture
-			    .supplyAsync(() -> {
-				    try {
-					    return remoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
-					                                    logEntries, lastCommitted);
-				    } catch (RemoteException e) {
-					    return null;
-				    }
-			    })
-			    .thenAccept(response -> {
-				    // stop if no longer leader
-				    if (node == null)
-					    return;
-
-				    updateRemoteNodeInfo(remoteNode, null, response);
-				    checkReplication();
-				    // TODO: schedule the next heartbeat
-			    });
+			Heartbeat heartbeat = new Heartbeat(remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			activeHeartbeats.put(remoteNode, heartbeat);
+			CompletableFuture.supplyAsync(heartbeat).thenAccept(response -> scheduleNextHeartbeat(heartbeat, response));
 		}
+	}
+
+	/**
+	 * Schedule the next heartbeat.
+	 * This method is to be invoked automatically (as part of a CompletableFuture) upon receiving a heartbeat response.
+	 * @param heartbeat the heartbeat sent
+	 * @param response  the response received (may be null)
+	 */
+	private void scheduleNextHeartbeat(Heartbeat heartbeat, AppendResponse response) {
+		// stop if no longer leader or the heartbeat was not executed (another heartbeat sent before this was scheduled)
+		if (node == null || !heartbeat.wasExecuted())
+			return;
+
+		// if the heartbeat was executed but a RemoteException occurred, immediately retry (same contents, no delay)
+		if (response == null) {
+			Heartbeat nextHeartbeat =
+			    new Heartbeat(heartbeat.remoteNode, 0, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
+			                  heartbeat.logEntries, heartbeat.lastCommitted);
+			activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
+			CompletableFuture.supplyAsync(heartbeat).thenAccept(
+			    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
+			return;
+		}
+
+		// a response was received; update remote node log info
+		LogEntry latestEntrySent =
+		    heartbeat.logEntries.length > 0 ? heartbeat.logEntries[heartbeat.logEntries.length - 1] : null;
+		updateRemoteNodeInfo(heartbeat.remoteNode, latestEntrySent, response);
+		checkReplication();
+
+		// schedule next heartbeat with appropriate delay; this will be an empty heartbeat
+		LogEntry[] logEntries = {};
+		Heartbeat nextHeartbeat =
+		    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteNode),
+		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode)), logEntries,
+		                  node.getRaftLog().getLastCommittedIndex());
+		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
+		CompletableFuture.supplyAsync(heartbeat).thenAccept(
+		    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
 	}
 
 	/**
@@ -177,5 +209,80 @@ public class LeaderState extends AbstractState {
 	private void resign(int supersedingTerm, int exitVote) {
 		resign(supersedingTerm);
 		votedFor = exitVote;
+	}
+
+	/**
+	 * Class to schedule and provide the ability to cancel a heartbeat.
+	 */
+	private class Heartbeat implements Supplier<AppendResponse> {
+		/* the remote node to which this heartbeat is related */
+		public final INode remoteNode;
+		/* time to wait before sending this heartbeat */
+		public final int delay;
+		/* flag for whether this heartbeat is active (still scheduled to be sent) */
+		private boolean active = true;
+		/* flag to indicate whether this heartbeat has actually sent an RMI call */
+		private boolean sent = false;
+
+		/* arguments to provide to the remote node's appendEntries method */
+		public final int prevLogIndex;
+		public final int prevLogTerm;
+		public final LogEntry[] logEntries;
+		public final int lastCommitted;
+
+		private Heartbeat(INode remoteNode, int delay, int prevLogIndex, int prevLogTerm, LogEntry[] logEntries,
+		                  int lastCommitted) {
+			this.remoteNode = remoteNode;
+			this.delay = delay;
+			this.prevLogIndex = prevLogIndex;
+			this.prevLogTerm = prevLogTerm;
+			this.logEntries = logEntries;
+			this.lastCommitted = lastCommitted;
+		}
+
+		@Override
+		public AppendResponse get() {
+			try {
+				// sleep until the heartbeat is scheduled to be sent
+				Thread.sleep(delay);
+
+				// upon waking up, check whether this heartbeat has deactivated in the meantime
+				if (!isActive())
+					return null;
+
+				sent = true;
+				return remoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm, logEntries,
+				                                lastCommitted);
+
+			} catch (InterruptedException | RemoteException e) {
+				return null;
+			}
+		}
+
+		/**
+		 * @return true if this heartbeat is still active (will be sent when scheduled), else false
+		 */
+		private boolean isActive() {
+			return active;
+		}
+
+		/**
+		 * Void this heartbeat.
+		 * This method is to be used when new log entries are received and a more up-to-date heartbeat is being sent
+		 * before this heartbeat is scheduled.
+		 */
+		private void deactivate() {
+			active = false;
+		}
+
+		/**
+		 * Check whether this heartbeat actually executed, as the get method may return without sending an RMI call
+		 * (would occur if this heartbeat was deactivated).
+		 * @return true if this heartbeat was actually executed (sent an RMI call), else false.
+		 * Note: this method returns true if a heartbeat was attempted to be sent but a RemoteException occurred.
+		 */
+		private boolean wasExecuted() {
+			return sent;
+		}
 	}
 }
