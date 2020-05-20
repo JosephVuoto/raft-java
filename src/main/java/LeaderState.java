@@ -14,7 +14,7 @@ public class LeaderState extends AbstractState {
 
 	public LeaderState(NodeImpl node) {
 		super(node);
-		// set majority threshold to ceil(cluster size / 2)
+		// set majority threshold to ceil((cluster size + 1) / 2)
 		MAJORITY_THRESHOLD = node.getRemoteNodes().size() / 2 + 1;
 		nextIndex = new HashMap<>();
 		matchIndex = new HashMap<>();
