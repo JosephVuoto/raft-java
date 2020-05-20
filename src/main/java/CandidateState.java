@@ -1,5 +1,8 @@
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.*;
 
 public class CandidateState extends AbstractState {
 
@@ -8,10 +11,13 @@ public class CandidateState extends AbstractState {
 	protected boolean haveVotedOtherNode;
 	protected boolean haveAMajorityVotes;
 
+	private ScheduledExecutorService scheduledExecutorService;
+	private ScheduledFuture electionScheduleFuture;
+
 	public CandidateState(NodeImpl node) {
 		super(node);
-		// set majority threshold to ceil(cluster size / 2)
-		this.MAJORITY_THRESHOLD = node.getRemoteNodes().size() / 2 + 1;
+		// set majority threshold
+		this.MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
 		this.isWaitingForVoteResponse = false;
 		this.haveVotedOtherNode = false;
 		this.haveAMajorityVotes = false;
@@ -30,7 +36,7 @@ public class CandidateState extends AbstractState {
 
 			if (haveVotedOtherNode) {
 				// If I did vote any other node
-				becomeFollower();
+				becomeFollower(votedFor);
 			}
 			if (haveAMajorityVotes) {
 				// If I already had a majority votes
@@ -71,7 +77,8 @@ public class CandidateState extends AbstractState {
 				return new VoteResponse(false, currentTerm);
 			} else {
 				// otherwise  be ready to become a follower and vote the caller
-				becomeFollower();
+				currentTerm = remoteTerm;
+				becomeFollower(remoteCandidateId);
 				return new VoteResponse(true, currentTerm);
 			}
 		} else {
@@ -79,7 +86,8 @@ public class CandidateState extends AbstractState {
 			if (remoteTerm > currentTerm || remoteLastLogIndex > commitIndex) {
 				// if the remote caller has a greater term or it has a news log
 				// be ready to become a follower and vote the caller
-				becomeFollower();
+				currentTerm = remoteTerm;
+				becomeFollower(remoteCandidateId);
 				return new VoteResponse(true, currentTerm);
 			} else {
 				// otherwise reject
@@ -100,7 +108,9 @@ public class CandidateState extends AbstractState {
 
 		if (haveAMajorityVotes || haveVotedOtherNode) {
 			// if I am in a transform progress
-			return new AppendResponse(false, currentTerm);
+			// return new AppendResponse(false, currentTerm);
+			doAppendEntries(remoteTerm, remoteLeaderId, remotePrevLogIndex, remotePrevLogTerm, remoteEntries,
+			                remoteLeaderCommit);
 		}
 
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
@@ -108,10 +118,45 @@ public class CandidateState extends AbstractState {
 		// WIP: confusing part, need to discuss
 		if (remoteTerm >= currentTerm || remotePrevLogTerm >= myLastLogTerm || remotePrevLogIndex >= myLastLogIndex) {
 			// if remote caller has a greater term and last log entry
-			becomeFollower();
-			// return failed to let follower state worry about the log
+			currentTerm = remoteTerm;
+			becomeFollower(remoteLeaderId);
+			doAppendEntries(remoteTerm, remoteLeaderId, remotePrevLogIndex, remotePrevLogTerm, remoteEntries,
+			                remoteLeaderCommit);
 		}
 		return new AppendResponse(false, currentTerm);
+	}
+
+	private AppendResponse doAppendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
+	                                       int remotePrevLogTerm, LogEntry[] remoteEntries, int remoteLeaderCommit) {
+		// Rules for all server
+		resetElectionTimer();
+
+		// Update term
+		currentTerm = remoteTerm;
+
+		// 1. Reply false if term < currentTerm (§5.1)
+		if (remoteTerm < currentTerm)
+			return new AppendResponse(false, currentTerm);
+		// 2. Reply false if log doesn’t contain an entry at prevLogIndex
+		//    whose term matches prevLogTerm (§5.3)
+		if (node.getRaftLog().getTermOfEntry(remotePrevLogIndex) != remotePrevLogTerm)
+			return new AppendResponse(false, currentTerm);
+		// 3. If an existing entry conflicts with a new one (same index
+		//	  but different terms), delete the existing entry and all that
+		//    follow it (§5.3)
+		// 4. Append any new entries not already in the log
+		try {
+			node.getRaftLog().writeEntries(remotePrevLogIndex, new ArrayList<LogEntry>(Arrays.asList(remoteEntries)));
+		} catch (RaftLog.MissingEntriesException e) {
+			System.out.println("Entries missing: " + e);
+		} catch (RaftLog.OverwriteCommittedEntryException e) {
+			System.out.println("Overwrite Committed Entry is not allow: " + e);
+		}
+		// 5. If leaderCommit > commitIndex, set commitIndex =
+		// min(leaderCommit, index of last new entry)
+		if (remoteLeaderCommit > commitIndex)
+			commitIndex = Math.min(remoteLeaderCommit, node.getRaftLog().getLastEntryIndex());
+		return new AppendResponse(true, currentTerm);
 	}
 
 	/**
@@ -151,10 +196,29 @@ public class CandidateState extends AbstractState {
 	}
 
 	private void becomeLeader() {
+		votedFor = this.node.getNodeId();
 		node.setState(new LeaderState(node));
 	}
 
-	private void becomeFollower() {
+	private void becomeFollower(int iVotedFor) {
+		votedFor = iVotedFor;
 		node.setState(new FollowerState(node));
+	}
+
+	/**
+	 * Set or reset the election timer, which would activate the becomeCandidate method when election timeout.
+	 */
+	private void resetElectionTimer() {
+		if (electionScheduleFuture != null && !electionScheduleFuture.isDone()) {
+			electionScheduleFuture.cancel(true);
+		}
+		electionScheduleFuture = scheduledExecutorService.schedule(new Runnable() {
+			@Override
+			public void run() {
+				// Become candidate if election timeout
+				++currentTerm;
+				node.setState(new CandidateState(node));
+			}
+		}, electionTimeout, TimeUnit.MILLISECONDS);
 	}
 }
