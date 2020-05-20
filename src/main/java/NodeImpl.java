@@ -1,6 +1,7 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.Set;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
 	/* A unique identifier of the node */
@@ -82,12 +83,41 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	 */
 	@Override
 	public String sendCommand(String command, int timeout) throws RemoteException {
-		// TODO: deal with commands
-		// e.g. if the command is [set name joseph], then :
-		// 1. redirect to the leader if needed
-		// 2. if the command or the log is committed, then call:
-		//		<stateMachine.set("name", "joseph");>
-		//		to apply the command to the state machine
-		return "Stub";
+		String[] commandArgs = command.split("\\s+");
+		if (commandArgs.length == 0) {
+			return "Invalid command";
+		}
+		if ("get".equals(commandArgs[0])) {
+			if (commandArgs.length != 2) {
+				return "Invalid command";
+			} else {
+				return raftLog.getStateMachine().get(commandArgs[1]);
+			}
+		} else if ("set".equals(commandArgs[0])) {
+			if (commandArgs.length != 3) {
+				return "Invalid command";
+			} else {
+				return state.handleCommand(command, timeout);
+			}
+		} else if ("del".equals(commandArgs[0])) {
+			if (commandArgs.length != 2) {
+				return "Invalid command";
+			} else {
+				return state.handleCommand(command, timeout);
+			}
+		} else if ("keys".equals(commandArgs[0])) {
+			if (commandArgs.length != 1) {
+				return "Invalid command";
+			} else {
+				Set<String> keySet = raftLog.getStateMachine().keys();
+				StringBuilder returnValue = new StringBuilder();
+				int id = 1;
+				for (String key : keySet) {
+					returnValue.append(id++).append(") ").append("\"").append(key).append("\"\n");
+				}
+				return returnValue.toString();
+			}
+		}
+		return "Invalid command";
 	}
 }
