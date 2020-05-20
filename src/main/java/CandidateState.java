@@ -66,7 +66,7 @@ public class CandidateState extends AbstractState {
 		// WIP: confusing part, need to discuss
 		if (remoteTerm >= currentTerm || remotePrevLogTerm >= myLastLogTerm || remotePrevLogIndex >= myLastLogIndex) {
 			// if remote caller has a greater term and last log entry
-			setCurrentTerm(remoteTerm) becomeFollower(remoteLeaderId);
+			becomeFollower(remoteTerm, remoteLeaderId);
 		}
 		return doAppendEntries(remoteTerm, remotePrevLogIndex, remotePrevLogTerm, remoteEntries, remoteLeaderCommit);
 	}
@@ -207,10 +207,5 @@ public class CandidateState extends AbstractState {
 			currentTerm = term;
 			writePersistentState();
 		}
-	}
-
-	@Override
-	public String handleCommand(String command, int timeout) {
-		return null;
 	}
 }
