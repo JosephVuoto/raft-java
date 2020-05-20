@@ -1,57 +1,47 @@
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class CandidateState extends AbstractState {
 
 	private final int MAJORITY_THRESHOLD;
 	protected boolean isWaitingForVoteResponse;
-	protected boolean haveVotedOtherNode;
-	protected boolean haveAMajorityVotes;
+	protected int myVotes;
 
 	private ScheduledExecutorService scheduledExecutorService;
-	private ScheduledFuture electionScheduleFuture;
+
+	private final Map<INode, Integer> nextIndex;
+	/* for each server, index of highest log entry known to be replicated on server (initialized to 0, increases
+	 * monotonically). The data structure is <node id, index of highest log entry...>. Reinitialized after election */
+	private final Map<INode, Integer> matchIndex;
 
 	public CandidateState(NodeImpl node) {
 		super(node);
 		// set majority threshold
-		this.MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
-		this.isWaitingForVoteResponse = false;
-		this.haveVotedOtherNode = false;
-		this.haveAMajorityVotes = false;
+		MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
+		isWaitingForVoteResponse = false;
+		myVotes = 0;
+		nextIndex = new HashMap<>();
+		matchIndex = new HashMap<>();
 	}
 
 	/**
 	 * Initialize attributes and setup a kind of
 	 * timeout timer for election and start it
 	 */
-	public void start() throws InterruptedException, RemoteException {
+	public void start() {
 		// TODO: initialize the candidate state
+		scheduleAnotherRound();
 
-		while (true) {
-			// Sleep for a random time.
-			Thread.sleep(electionTimeout);
-
-			if (haveVotedOtherNode) {
-				// If I did vote any other node
-				becomeFollower(votedFor);
-			}
-			if (haveAMajorityVotes) {
-				// If I already had a majority votes
-				becomeLeader();
-			}
-
-			// Otherwise get all the remote nodes
-			List<INode> remoteNodes = node.getRemoteNodes();
-			// Request them to vote me
-			requestOtherNodesToVoteMe(currentTerm, this.node.getNodeId(), this.node.getRaftLog().getLastEntryIndex(),
-			                          this.node.getRaftLog().getLastCommittedIndex(), remoteNodes);
-
-			// Increase the term num
-			currentTerm += 1;
+		for (INode remoteNode : node.getRemoteNodes()) {
+			nextIndex.put(remoteNode, node.getRaftLog().getLastEntryIndex() + 1);
+			matchIndex.put(remoteNode, 0);
 		}
+
+		requestAllRemoteNodesToVote();
 	}
 
 	/**
@@ -120,8 +110,6 @@ public class CandidateState extends AbstractState {
 
 	private AppendResponse doAppendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
 	                                       int remotePrevLogTerm, LogEntry[] remoteEntries, int remoteLeaderCommit) {
-		// Rules for all server
-		resetElectionTimer();
 
 		// Update term
 		currentTerm = remoteTerm;
@@ -151,71 +139,64 @@ public class CandidateState extends AbstractState {
 		return new AppendResponse(true, currentTerm);
 	}
 
-	/**
-	 * Request other nodes to vote me
-	 *
-	 * @throws RemoteException
-	 */
-	private void requestOtherNodesToVoteMe(int myTerm, int myNodeID, int myLastLogIndex, int myLastLogTerm,
-	                                       List<INode> remoteNodes) throws RemoteException {
-		// Set my state to waiting my votes
-		isWaitingForVoteResponse = true;
-		// Store my votes count
-		int myVotesCount = 0;
-		// request them to vote me sync; might be async
-		for (INode remoteNode : remoteNodes) {
-			if (remoteNode.requestVote(myTerm, myNodeID, myLastLogIndex, myLastLogTerm).voteGranted) {
-				// if the remote node votes me
+	private void requestAllRemoteNodesToVote() {
 
-				if (haveVotedOtherNode) {
-					// if I am in a transform progress to become a follower
-					break;
-				}
+		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
+		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
+		int myID = node.getNodeId();
+		for (INode remoteNode : node.getRemoteNodes()) {
+			CompletableFuture
+			    .supplyAsync(() -> {
+				    try {
+					    // sleep until the election time is scheduled to be sent
 
-				myVotesCount += 1;
-				if (myVotesCount >= MAJORITY_THRESHOLD) {
-					// if I got a majority of votes
-					iGotAMajorityVotes();
-					break;
-				}
+					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
+
+				    } catch (RemoteException e) {
+					    return new VoteResponse(false, -1);
+				    }
+			    })
+			    .thenAccept(this::handleVoteRes);
+		}
+	}
+
+	private void handleVoteRes(VoteResponse voteResponse) {
+		// stop if no longer candidate
+		if (node == null)
+			return;
+
+		if (voteResponse.voteGranted) {
+			myVotes += 1;
+			if (myVotes >= MAJORITY_THRESHOLD) {
+				becomeLeader();
 			}
 		}
 	}
 
-	private void iGotAMajorityVotes() {
-		// transfer to leaderState
-		becomeLeader();
+	private void scheduleAnotherRound() {
+		scheduledExecutorService.schedule(() -> {
+			if (node != null) {
+				currentTerm += 1;
+				node.setState(new CandidateState(node));
+				node = null;
+			}
+		}, electionTimeout, TimeUnit.MILLISECONDS);
 	}
 
 	private void becomeLeader() {
 		votedFor = this.node.getNodeId();
 		node.setState(new LeaderState(node));
+		this.node = null;
 	}
 
 	private void becomeFollower(int iVotedFor) {
 		node.setState(new FollowerState(node, iVotedFor));
-	}
-
-	/**
-	 * Set or reset the election timer, which would activate the becomeCandidate method when election timeout.
-	 */
-	private void resetElectionTimer() {
-		if (electionScheduleFuture != null && !electionScheduleFuture.isDone()) {
-			electionScheduleFuture.cancel(true);
-		}
-		electionScheduleFuture = scheduledExecutorService.schedule(new Runnable() {
-			@Override
-			public void run() {
-				// Become candidate if election timeout
-				++currentTerm;
-				node.setState(new CandidateState(node));
-			}
-		}, electionTimeout, TimeUnit.MILLISECONDS);
+		this.node = null;
 	}
 
 	@Override
 	public String handleCommand(String command, int timeout) {
-		return send2Leader(command, timeout);
+		return sendToLeader(command, timeout);
 	}
 
 	/**
@@ -223,7 +204,7 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @return
 	 */
-	private String send2Leader(String command, int timeout) {
+	private String sendToLeader(String command, int timeout) {
 		// TODO: Currently I don't know when I would get a command;
 		String res = "Fail to write the log";
 		try {
