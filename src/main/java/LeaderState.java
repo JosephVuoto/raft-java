@@ -126,6 +126,19 @@ public class LeaderState extends AbstractState {
 	}
 
 	/**
+	 * Deactivate all scheduled heartbeats and send a more up-to-date heartbeat to remote nodes instead.
+	 */
+	private void sendEarlyHeartbeats() {
+		for (INode remoteNode : node.getRemoteNodes()) {
+			Heartbeat scheduled = activeHeartbeats.get(remoteNode);
+			if (scheduled != null)
+				scheduled.deactivate();
+
+			// TODO: construct and send updated heartbeat
+		}
+	}
+
+	/**
 	 * Update the information known about a remote node's log.
 	 * This method is invoked as part of a CompletableFuture upon receiving the result of an appendEntries RMI call.
 	 * @param remoteNode      the node upon which the appendEntries RMI call was called
