@@ -15,6 +15,8 @@ public class LeaderState extends AbstractState {
 	/* a map of each remote node's active pending heartbeat */
 	private final Map<INode, Heartbeat> activeHeartbeats;
 
+	private final int POLL_INTERVAL = 50;
+
 	public LeaderState(NodeImpl node) {
 		super(node);
 		// set majority threshold to ceil((cluster size + 1) / 2)
@@ -71,7 +73,14 @@ public class LeaderState extends AbstractState {
 
 	@Override
 	public String handleCommand(String command, int timeout) {
-		return null;
+		LogEntry entry = node.getRaftLog().addNewEntry(currentTerm, command);
+		sendEarlyHeartbeats();
+
+		for (int t = 0; t < timeout; t += POLL_INTERVAL) {
+			if (entry.isCommitted())
+				return "OK";
+		}
+		return "Timed out";
 	}
 
 	/**
