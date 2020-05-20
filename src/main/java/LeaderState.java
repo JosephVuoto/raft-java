@@ -286,6 +286,7 @@ public class LeaderState extends AbstractState {
 		 */
 		private void deactivate() {
 			active = false;
+			activeHeartbeats.remove(remoteNode);
 		}
 
 		/**
