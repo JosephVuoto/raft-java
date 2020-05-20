@@ -62,10 +62,10 @@ public class NodeStarter {
 			PersistentState state = JsonFileUtil.readPersistentState(config.statePath);
 			/* Start the node! */
 			AbstractState initialState = new FollowerState(node);
+			node.setState(initialState);
 			if (state != null) {
 				initialState.restorePersistentState(state);
 			}
-			node.setState(initialState);
 		} catch (RemoteException | MalformedURLException | InterruptedException e) {
 			e.printStackTrace();
 		}
