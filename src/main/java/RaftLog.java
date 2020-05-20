@@ -3,7 +3,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RaftLog {
-	private final List<LogEntry> logEntries;
+	private List<LogEntry> logEntries;
 	private LogEntry lastCommitted;
 	private final StateMachine stateMachine;
 
