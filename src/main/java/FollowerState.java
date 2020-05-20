@@ -19,9 +19,9 @@ public class FollowerState extends AbstractState {
 	/**
 	 * Construct a Follower with a LeaderID
 	 * @param node
-	 * @param term a higher term is required.
+	 * @param LeaderId
 	 */
-	public FollowerState(NodeImpl node, int term) {
+	public FollowerState(NodeImpl node, int LeaderId) {
 		super(node);
 		currentLeaderId = LeaderId;
 	}
