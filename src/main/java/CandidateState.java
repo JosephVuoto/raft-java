@@ -193,8 +193,7 @@ public class CandidateState extends AbstractState {
 	}
 
 	private void becomeFollower(int iVotedFor) {
-		votedFor = iVotedFor;
-		node.setState(new FollowerState(node));
+		node.setState(new FollowerState(node, iVotedFor));
 	}
 
 	/**
@@ -212,5 +211,29 @@ public class CandidateState extends AbstractState {
 				node.setState(new CandidateState(node));
 			}
 		}, electionTimeout, TimeUnit.MILLISECONDS);
+	}
+
+	@Override
+	public String handleCommand(String command, int timeout) {
+		return send2Leader(command, timeout);
+	}
+
+	/**
+	 * If a client contacts a follower, the follower redirects it to the leader
+	 *
+	 * @return
+	 */
+	private String send2Leader(String command, int timeout) {
+		// TODO: Currently I don't know when I would get a command;
+		String res = "Fail to write the log";
+		try {
+			INode leader = node.getRemoteNodes().get(votedFor);
+			res = ((IClientInterface)leader).sendCommand(command, timeout);
+		} catch (IndexOutOfBoundsException e) {
+			System.out.println("No Such node with the ID: " + e);
+		} catch (RemoteException e) {
+			System.out.println("Cannot reach the remote node: " + e);
+		}
+		return res;
 	}
 }
