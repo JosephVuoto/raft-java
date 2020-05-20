@@ -15,7 +15,7 @@ public class LeaderState extends AbstractState {
 	/* a map of each remote node's active pending heartbeat */
 	private final Map<INode, Heartbeat> activeHeartbeats;
 
-	private final int POLL_INTERVAL = 50;
+	private static final int POLL_INTERVAL = 50;
 
 	public LeaderState(NodeImpl node) {
 		super(node);
