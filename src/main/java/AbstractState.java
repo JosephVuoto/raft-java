@@ -114,4 +114,14 @@ public abstract class AbstractState {
 	public static void setStatePersistencePath(String statePersistencePath) {
 		AbstractState.statePersistencePath = statePersistencePath;
 	}
+
+	/**
+	 * Recover from crashing
+	 * @param state persistent state from a file
+	 */
+	public void restorePersistentState(PersistentState state) {
+		votedFor = state.getVoteFor();
+		currentTerm = state.getCurrentTerm();
+		node.getRaftLog().setLogEntries(state.getLogEntries());
+	}
 }

@@ -137,6 +137,11 @@ public class RaftLog {
 		return logEntries;
 	}
 
+
+	public void setLogEntries(List<LogEntry> logEntries) {
+		this.logEntries = logEntries;
+  }
+  
 	public StateMachine getStateMachine() {
 		return stateMachine;
 	}
