@@ -118,6 +118,6 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 				return returnValue.toString();
 			}
 		}
-		return "Stub";
+		return "Invalid command";
 	}
 }
