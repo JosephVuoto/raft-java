@@ -57,6 +57,8 @@ public class NodeStarter {
 			/* Wait until all thread are finished, so that the remoteNodeList contains all remote nodes */
 			countDownLatch.await();
 			node.setRemoteNodes(remoteNodeList);
+			/* Set path for persistent states */
+			AbstractState.setStatePersistencePath(config.statePath);
 			/* Start the node! */
 			node.setState(new FollowerState(node));
 		} catch (RemoteException | MalformedURLException | InterruptedException e) {
