@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RaftLog {
 	private final List<LogEntry> logEntries;
@@ -7,7 +8,7 @@ public class RaftLog {
 	private final StateMachine stateMachine;
 
 	public RaftLog() {
-		logEntries = new ArrayList<>();
+		logEntries = new CopyOnWriteArrayList<>();
 		stateMachine = new StateMachine();
 	}
 
@@ -62,6 +63,12 @@ public class RaftLog {
 		// append new entries
 		for (LogEntry entry : entries)
 			logEntries.add(entry);
+	}
+
+	public synchronized LogEntry addNewEntry(int term, String command) {
+		int index = getLastEntryIndex() + 1;
+		LogEntry entry = new LogEntry(index, term, command);
+		return entry;
 	}
 
 	/**
