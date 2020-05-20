@@ -1,5 +1,7 @@
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -134,7 +136,22 @@ public class LeaderState extends AbstractState {
 			if (scheduled != null)
 				scheduled.deactivate();
 
-			// TODO: construct and send updated heartbeat
+			// construct and send updated heartbeat
+			int prevLogIndex = nextIndex.get(remoteNode) - 1;
+			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+			LogEntry[] logEntries;
+			try {
+				logEntries = (LogEntry[])node.getRaftLog()
+				                 .getLogEntries()
+				                 .subList(prevLogIndex, node.getRaftLog().getLastCommittedIndex())
+				                 .toArray();
+			} catch (IndexOutOfBoundsException e) {
+				logEntries = new LogEntry[] {};
+			}
+			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
+			Heartbeat early = new Heartbeat(remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			activeHeartbeats.put(remoteNode, early);
+			CompletableFuture.supplyAsync(early).thenAccept(response -> scheduleNextHeartbeat(early, response));
 		}
 	}
 
@@ -181,6 +198,7 @@ public class LeaderState extends AbstractState {
 			if (majorityHasLogEntry(i) && node.getRaftLog().getTermOfEntry(i) == currentTerm) {
 				try {
 					node.getRaftLog().commitToIndex(i);
+					sendEarlyHeartbeats();
 				} catch (RaftLog.MissingEntriesException e) {
 					// TODO: logging (execution should never reach here)
 					return;
