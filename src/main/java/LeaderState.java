@@ -31,11 +31,11 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// TODO: if receive this RPC from a stale candidate (whose term is less
 		// than its term), send the current term number to reject the vote. otherwise
 		// go back to follower state
-		return 0;
+		return null;
 	}
 
 	/**
@@ -43,9 +43,9 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                         int leaderCommit) {
+	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
+	                                    int leaderCommit) {
 		// TODO: similar to requestVote() in this class, check the validation of the RPC
-		return 0;
+		return null;
 	}
 }

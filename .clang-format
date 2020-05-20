@@ -1,5 +1,6 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
+Language: Java
 TabWidth: 4
 UseTab: ForIndentation
 BreakBeforeBraces: Linux
@@ -15,4 +16,3 @@ IncludeCategories:
     Priority:        1
   - Regex:           '.*'
     Priority:        2
-
