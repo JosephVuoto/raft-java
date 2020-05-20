@@ -179,10 +179,10 @@ public class FollowerState extends AbstractState {
 		electionScheduleFuture = scheduledExecutorService.schedule(new Runnable() {
 			@Override
 			public void run() {
-				// Become candidate if election timeout
-				++currentTerm;
 				node.setState(new CandidateState(node));
 			}
 		}, electionTimeout, TimeUnit.MILLISECONDS);
 	}
 }
+
+
