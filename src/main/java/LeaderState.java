@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-public class LeaderState extends AbstractState {
+public class LeaderState extends AbstractState implements IClientInterface {
 	private final int MAJORITY_THRESHOLD;
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */
@@ -67,6 +67,12 @@ public class LeaderState extends AbstractState {
 
 		// otherwise, deny the request
 		return new AppendResponse(false, currentTerm);
+	}
+
+	@Override
+	public String sendCommand(String command, int timeout) throws RemoteException {
+		// TODO
+		return null;
 	}
 
 	/**
