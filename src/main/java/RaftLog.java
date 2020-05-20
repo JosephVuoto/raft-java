@@ -113,4 +113,8 @@ public class RaftLog {
 	public List<LogEntry> getLogEntries() {
 		return logEntries;
 	}
+
+	public void setLogEntries(List<LogEntry> logEntries) {
+		this.logEntries = logEntries;
+	}
 }

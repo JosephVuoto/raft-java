@@ -59,8 +59,13 @@ public class NodeStarter {
 			node.setRemoteNodes(remoteNodeList);
 			/* Set path for persistent states */
 			AbstractState.setStatePersistencePath(config.statePath);
+			PersistentState state = JsonFileUtil.readPersistentState(config.statePath);
 			/* Start the node! */
-			node.setState(new FollowerState(node));
+			AbstractState initialState = new FollowerState(node);
+			if (state != null) {
+				initialState.restorePersistentState(state);
+			}
+			node.setState(initialState);
 		} catch (RemoteException | MalformedURLException | InterruptedException e) {
 			e.printStackTrace();
 		}

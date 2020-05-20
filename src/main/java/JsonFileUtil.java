@@ -18,7 +18,12 @@ public class JsonFileUtil {
 	 */
 	public static PersistentState readPersistentState(String path) {
 		String fileContent = readFile(path);
-		return new Gson().fromJson(fileContent, PersistentState.class);
+		try {
+			return new Gson().fromJson(fileContent, PersistentState.class);
+		} catch (Exception e) {
+			/* error parsing the json */
+			return null;
+		}
 	}
 
 	/**
