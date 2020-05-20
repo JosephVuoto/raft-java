@@ -17,14 +17,13 @@ public class FollowerState extends AbstractState {
 	}
 
 	/**
-	 * Initial with specific term. This may happen when a candidate return to FollowerState.
+	 * Construct a Follower with a LeaderID
 	 * @param node
 	 * @param term a higher term is required.
 	 */
 	public FollowerState(NodeImpl node, int term) {
 		super(node);
-		if (currentTerm < term)
-			currentTerm = term;
+		currentLeaderId = LeaderId;
 	}
 
 	/**
@@ -34,8 +33,10 @@ public class FollowerState extends AbstractState {
 	public void start() {
 		// Use for election timeout
 		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+		// Init value
 		votedFor = -1;
 		currentLeaderId = -1;
+		writePersistentState();
 		// Set the timer
 		resetElectionTimer();
 	}
@@ -49,7 +50,7 @@ public class FollowerState extends AbstractState {
 		// Rules for all server
 		resetElectionTimer();
 		if (term > currentTerm)
-			changeTerm(term);
+			setCurrentTerm(term);
 		// Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new VoteResponse(false, currentTerm);
@@ -63,8 +64,8 @@ public class FollowerState extends AbstractState {
 		if ((votedFor == -1 || votedFor == candidateId) &&
 		    (lastLogTerm > currLastCommittedLogIndex ||
 		     (lastLogTerm == currLastCommittedLogIndex && lastLogIndex >= commitIndex))) {
-			changeTerm(term);
-			votedFor = candidateId;
+			setCurrentTerm(term);
+			setVoteFor(candidateId);
 			return new VoteResponse(true, currentTerm);
 		} else {
 			return new VoteResponse(false, currentTerm);
@@ -79,11 +80,14 @@ public class FollowerState extends AbstractState {
 	 */
 	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
 	                                    int leaderCommit) {
-		currentLeaderId = leaderId;
+
 		// Rules for all server
 		resetElectionTimer();
-		if (term > currentTerm)
-			changeTerm(term);
+		// When recover from a crash, we may have to set the leaderId.
+		// So term equal to the currentTerm also need to update the leaderId.
+		if (term >= currentTerm)
+			currentLeaderId = leaderId;
+			setCurrentTerm(term);
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
@@ -97,6 +101,7 @@ public class FollowerState extends AbstractState {
 		// 4. Append any new entries not already in the log
 		try {
 			node.getRaftLog().writeEntries(prevLogIndex, new ArrayList<LogEntry>(Arrays.asList(entries)));
+			writePersistentState();
 		} catch (RaftLog.MissingEntriesException e) {
 			System.out.println("Entries missing: " + e);
 		} catch (RaftLog.OverwriteCommittedEntryException e) {
@@ -108,6 +113,22 @@ public class FollowerState extends AbstractState {
 			commitIndex = Math.min(leaderCommit, node.getRaftLog().getLastEntryIndex());
 		return new AppendResponse(true, currentTerm);
 	}
+
+	private void setVoteFor(int votedFor) {
+		this.votedFor = votedFor;
+		writePersistentState();
+	}
+
+	private boolean setCurrentTerm(int term) {
+		if (term > currentTerm) {
+			this.votedFor = -1;
+			currentTerm = term;
+			writePersistentState();
+			return true;
+		}
+		return false;
+	}
+
 
 	/**
 	 * If a client contacts a follower, the follower redirects it to the leader
@@ -125,19 +146,6 @@ public class FollowerState extends AbstractState {
 			System.out.println("Cannot reach the remote node: " + e);
 		}
 		return res;
-	}
-
-	/**
-	 * Use for term changing, which would reset the votedFor automatically (So I don't have to remember that).
-	 * @param term
-	 */
-	private boolean changeTerm(int term) {
-		if (term > currentTerm) {
-			currentTerm = term;
-			votedFor = -1;
-			return true;
-		}
-		return false;
 	}
 
 	/**
