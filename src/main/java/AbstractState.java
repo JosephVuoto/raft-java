@@ -21,8 +21,8 @@ public abstract class AbstractState {
 	protected static int commitIndex = 0;
 	/* index of highest log entry applied to state machine (initialized to 0, increases monotonically) */
 	protected static int lastApplied = 0;
-	/* path for persistent states: currentTerm, votedFor, logEntries */
-	/* TODO: find a way to initialize this value */
+	/* path for persistent states: currentTerm, votedFor, logEntries,
+	    will be initialized when the node starts, in NodeStarter  */
 	private static String statePersistencePath = "./state.json";
 
 	/* The node itself */
@@ -102,5 +102,9 @@ public abstract class AbstractState {
 			this.success = success;
 			this.term = term;
 		}
+	}
+
+	public static void setStatePersistencePath(String statePersistencePath) {
+		AbstractState.statePersistencePath = statePersistencePath;
 	}
 }

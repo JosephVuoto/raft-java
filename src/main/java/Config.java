@@ -5,6 +5,7 @@ import java.util.List;
  * {
  *     "nodeId":1,
  *     "port":2222,
+ *     "statePath":"./state.json",
  *     "clusterInfo":[
  *         {
  *             "nodeId":2,
@@ -29,12 +30,15 @@ public class Config {
 	public final Integer nodeId;
 	/* Local port, null if it is config for client */
 	public final Integer port;
+	/* path for persistent states: currentTerm, votedFor, logEntries */
+	public final String statePath;
 	/* Information of the cluster (other nodes) */
 	public final List<NodeInfo> clusterInfo;
 
-	public Config(Integer nodeId, Integer port, List<NodeInfo> clusterInfo) {
+	public Config(Integer nodeId, Integer port, String statePath, List<NodeInfo> clusterInfo) {
 		this.nodeId = nodeId;
 		this.port = port;
+		this.statePath = statePath;
 		this.clusterInfo = clusterInfo;
 	}
 
