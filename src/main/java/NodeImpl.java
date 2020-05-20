@@ -8,11 +8,9 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/* The node's state (follower, candidate or leader) */
 	private AbstractState state;
 	/* log entries */
-	private RaftLog raftLog;
+	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
 	private List<INode> remoteNodes;
-	/* The state machine (k-v db) */
-	private StateMachine stateMachine = new StateMachine();
 
 	/**
 	 * Constructor
@@ -51,11 +49,12 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
-	/* Auto-generated getters and setters */
+	@Override
 	public int getNodeId() {
 		return nodeId;
 	}
 
+	/* Auto-generated getters and setters */
 	public void setNodeId(int nodeId) {
 		this.nodeId = nodeId;
 	}

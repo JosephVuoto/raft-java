@@ -2,8 +2,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RaftLog {
-	private List<LogEntry> logEntries = new ArrayList<>();
+	private final List<LogEntry> logEntries;
 	private LogEntry lastCommitted;
+	private final StateMachine stateMachine;
+
+	public RaftLog() {
+		logEntries = new ArrayList<>();
+		stateMachine = new StateMachine();
+	}
 
 	/**
 	 * @return the index of the most recent log entry (committed or otherwise; 0 if no entries exist).
@@ -69,7 +75,23 @@ public class RaftLog {
 		for (int i = getLastCommittedIndex(); i < lastToCommit; i++) {
 			lastCommitted = logEntries.get(i);
 			lastCommitted.commit();
+			applyLog(lastCommitted);
 		}
+	}
+
+	/**
+	 * Apply the command to state machine
+	 * @param entry log entry to apply
+	 */
+	private String applyLog(LogEntry entry) {
+		String command = entry.command;
+		String[] commandArgs = command.split("\\s+");
+		if ("set".equals(commandArgs[0])) {
+			return stateMachine.set(commandArgs[1], commandArgs[2]);
+		} else if ("del".equals(commandArgs[0])) {
+			return stateMachine.del(commandArgs[1]);
+		}
+		return "Invalid arguments";
 	}
 
 	/**
