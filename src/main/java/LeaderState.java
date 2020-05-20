@@ -74,6 +74,7 @@ public class LeaderState extends AbstractState {
 	@Override
 	public String handleCommand(String command, int timeout) {
 		LogEntry entry = node.getRaftLog().addNewEntry(currentTerm, command);
+		writePersistentState();
 		sendEarlyHeartbeats();
 
 		for (int t = 0; t < timeout; t += POLL_INTERVAL) {
@@ -140,8 +141,8 @@ public class LeaderState extends AbstractState {
 		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode)), logEntries,
 		                  node.getRaftLog().getLastCommittedIndex());
 		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
-		CompletableFuture.supplyAsync(nextHeartbeat).thenAccept(
-		    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
+		CompletableFuture.supplyAsync(nextHeartbeat)
+		    .thenAccept(newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
 	}
 
 	/**
@@ -215,6 +216,7 @@ public class LeaderState extends AbstractState {
 			if (majorityHasLogEntry(i) && node.getRaftLog().getTermOfEntry(i) == currentTerm) {
 				try {
 					node.getRaftLog().commitToIndex(i);
+					writePersistentState();
 					commitIndex = i;
 					sendEarlyHeartbeats();
 				} catch (RaftLog.MissingEntriesException e) {
@@ -246,6 +248,7 @@ public class LeaderState extends AbstractState {
 	private void resign(int supersedingTerm) {
 		node.setState(new FollowerState(node));
 		currentTerm = supersedingTerm;
+		writePersistentState();
 		// indicate no longer being leader; this reference is checked before scheduling the next heartbeat
 		node = null;
 	}
