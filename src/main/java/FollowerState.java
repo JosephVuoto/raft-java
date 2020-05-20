@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class FollowerState extends AbstractState {
 
 	public FollowerState(NodeImpl node) {
@@ -17,9 +19,9 @@ public class FollowerState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public int requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// TODO: determine whether to vote for the caller and update the timer
-		return null;
+		return 0;
 	}
 
 	/**
@@ -27,9 +29,9 @@ public class FollowerState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public int appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
+	                         int leaderCommit) {
 		// TODO: determine whether to append entries from the caller and update the timer
-		return null;
+		return 0;
 	}
 }

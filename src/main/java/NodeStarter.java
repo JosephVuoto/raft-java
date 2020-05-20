@@ -9,9 +9,7 @@ import java.rmi.RemoteException;
 public class NodeStarter {
 	public static void main(String[] args) {
 		// TODO: start a node:
-		// 1. read serverId, registry address from a config file.
-		/* Better read the path from args. Hardcode it for now */
-		Config config = JsonFileUtil.readConfig("./config.json");
+		// 1. read serverId, registry address from a config file
 		// 2. create a NodeImpl
 		// 3. register the remote object
 		// 4. set a state (follower) to the node, then start it
