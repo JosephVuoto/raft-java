@@ -109,16 +109,21 @@ public class FollowerState extends AbstractState {
 		return new AppendResponse(true, currentTerm);
 	}
 
+	@Override
+	public String handleCommand(String command, int timeout) {
+		return send2Leader(command, timeout);
+	}
+
 	/**
 	 * If a client contacts a follower, the follower redirects it to the leader
 	 * @return
 	 */
-	private String send2Leader(String command) {
+	private String send2Leader(String command, int timeout) {
 		// TODO: Currently I don't know when I would get a command;
 		String res = "Fail to write the log";
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
-			res = ((IClientInterface)leader).sendCommand(command);
+			res = ((IClientInterface)leader).sendCommand(command, timeout);
 		} catch (IndexOutOfBoundsException e) {
 			System.out.println("No Such node with the ID: " + e);
 		} catch (RemoteException e) {
