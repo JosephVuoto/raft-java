@@ -87,9 +87,10 @@ public class FollowerState extends AbstractState {
 		resetElectionTimer();
 		// When recover from a crash, we may have to set the leaderId.
 		// So term equal to the currentTerm also need to update the leaderId.
-		if (term >= currentTerm)
+		if (term >= currentTerm) {
 			currentLeaderId = leaderId;
 			setCurrentTerm(term);
+		}
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
