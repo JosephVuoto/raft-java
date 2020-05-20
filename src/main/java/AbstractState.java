@@ -66,6 +66,13 @@ public abstract class AbstractState {
 	                                             LogEntry[] entries, int leaderCommit);
 
 	/**
+	 * Handle the command from user's command line
+	 * @param command Command string e.g. "set id 1"
+	 * @param timeout in millisecond
+	 * @return result
+	 */
+	abstract public String handleCommand(String command, int timeout);
+	/**
 	 * Persistent state on all servers:
 	 * (Updated on stable storage before responding to RPCs)
 	 * currentTerm, votedFor, log[]

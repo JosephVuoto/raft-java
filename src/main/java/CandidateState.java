@@ -34,4 +34,9 @@ public class CandidateState extends AbstractState {
 		// state. if not, return the current term number.
 		return null;
 	}
+
+	@Override
+	public String handleCommand(String command, int timeout) {
+		return null;
+	}
 }
