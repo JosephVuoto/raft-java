@@ -116,16 +116,40 @@ public class FollowerState extends AbstractState {
 		return new AppendResponse(true, currentTerm);
 	}
 
+	/**
+	 * Redirect the command to the leader and send back the result on behalf of the leader
+	 * @param command Command string e.g. "set id 1"
+	 * @param timeout in millisecond
+	 * @return
+	 */
 	@Override
 	public String handleCommand(String command, int timeout) {
-		return send2Leader(command, timeout);
+		String res = null;
+		try {
+			INode leader = node.getRemoteNodes().get(currentLeaderId);
+			res = ((IClientInterface)leader).sendCommand(command, timeout);
+		} catch (IndexOutOfBoundsException e) {
+			res = "No Such node with the ID: " + e;
+		} catch (RemoteException e) {
+			res = "Cannot reach the remote node: " + e;
+		}
+		return res;
 	}
 
+	/**
+	 * Ser VoteFor and store it persistently.
+	 * @param votedFor
+	 */
 	private void setVoteFor(int votedFor) {
 		this.votedFor = votedFor;
 		writePersistentState();
 	}
 
+	/**
+	 * Ser currentTerm and store it persistently.
+	 * @param term
+	 * @return true if term > currentTerm
+	 */
 	private boolean setCurrentTerm(int term) {
 		if (term > currentTerm) {
 			this.votedFor = -1;
@@ -134,24 +158,6 @@ public class FollowerState extends AbstractState {
 			return true;
 		}
 		return false;
-	}
-
-	/**
-	 * If a client contacts a follower, the follower redirects it to the leader
-	 * @return
-	 */
-	private String send2Leader(String command, int timeout) {
-		// TODO: Currently I don't know when I would get a command;
-		String res = "Fail to write the log";
-		try {
-			INode leader = node.getRemoteNodes().get(currentLeaderId);
-			res = ((IClientInterface)leader).sendCommand(command, timeout);
-		} catch (IndexOutOfBoundsException e) {
-			System.out.println("No Such node with the ID: " + e);
-		} catch (RemoteException e) {
-			System.out.println("Cannot reach the remote node: " + e);
-		}
-		return res;
 	}
 
 	/**
