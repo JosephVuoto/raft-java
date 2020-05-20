@@ -1,6 +1,7 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.Set;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
 	/* A unique identifier of the node */
@@ -8,7 +9,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/* The node's state (follower, candidate or leader) */
 	private AbstractState state;
 	/* log entries */
-	private RaftLog raftLog;
+	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
 	private List<INode> remoteNodes;
 
@@ -49,11 +50,12 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
-	/* Auto-generated getters and setters */
+	@Override
 	public int getNodeId() {
 		return nodeId;
 	}
 
+	/* Auto-generated getters and setters */
 	public void setNodeId(int nodeId) {
 		this.nodeId = nodeId;
 	}
@@ -77,11 +79,45 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @see IClientInterface#sendCommand(String)
+	 * @see IClientInterface#sendCommand(String, int)
 	 */
 	@Override
-	public String sendCommand(String command) throws RemoteException {
-		// TODO: deal with commands
-		return "Stub";
+	public String sendCommand(String command, int timeout) throws RemoteException {
+		String[] commandArgs = command.split("\\s+");
+		if (commandArgs.length == 0) {
+			return "Invalid command";
+		}
+		if ("get".equals(commandArgs[0])) {
+			if (commandArgs.length != 2) {
+				return "Invalid command";
+			} else {
+				return raftLog.getStateMachine().get(commandArgs[1]);
+			}
+		} else if ("set".equals(commandArgs[0])) {
+			if (commandArgs.length != 3) {
+				return "Invalid command";
+			} else {
+				return state.handleCommand(command, timeout);
+			}
+		} else if ("del".equals(commandArgs[0])) {
+			if (commandArgs.length != 2) {
+				return "Invalid command";
+			} else {
+				return state.handleCommand(command, timeout);
+			}
+		} else if ("keys".equals(commandArgs[0])) {
+			if (commandArgs.length != 1) {
+				return "Invalid command";
+			} else {
+				Set<String> keySet = raftLog.getStateMachine().keys();
+				StringBuilder returnValue = new StringBuilder();
+				int id = 1;
+				for (String key : keySet) {
+					returnValue.append(id++).append(") ").append("\"").append(key).append("\"\n");
+				}
+				return returnValue.toString();
+			}
+		}
+		return "Invalid command";
 	}
 }

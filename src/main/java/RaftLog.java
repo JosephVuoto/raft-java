@@ -1,16 +1,23 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RaftLog {
-	private List<LogEntry> logEntries = new ArrayList<>();
+	private final List<LogEntry> logEntries;
 	private LogEntry lastCommitted;
+	private final StateMachine stateMachine;
+
+	public RaftLog() {
+		logEntries = new CopyOnWriteArrayList<>();
+		stateMachine = new StateMachine();
+	}
 
 	/**
-	 * @return the index of the most recent log entry (committed or otherwise).
+	 * @return the index of the most recent log entry (committed or otherwise; 0 if no entries exist).
 	 * Note: indexing begins at 1.
 	 */
 	public int getLastEntryIndex() {
-		return logEntries.size() + 1;
+		return logEntries.size();
 	}
 
 	/**
@@ -24,10 +31,14 @@ public class RaftLog {
 	/**
 	 * Retrieve the term number associated with a particular log entry.
 	 * @param entryIndex the index of the log entry
-	 * @return the term number associated with the log entry
+	 * @return the term number associated with the log entry (0 if entry doesn't exist)
 	 */
 	public int getTermOfEntry(int entryIndex) {
-		return logEntries.get(entryIndex).term;
+		try {
+			return logEntries.get(entryIndex).term;
+		} catch (IndexOutOfBoundsException e) {
+			return 0;
+		}
 	}
 
 	/**
@@ -50,8 +61,13 @@ public class RaftLog {
 		logEntries.subList(fromIndex - 1, logEntries.size()).clear();
 
 		// append new entries
-		for (LogEntry entry : entries)
-			logEntries.add(entry);
+		logEntries.addAll(entries);
+	}
+
+	public synchronized LogEntry addNewEntry(int term, String command) {
+		int index = getLastEntryIndex() + 1;
+		LogEntry entry = new LogEntry(index, term, command);
+		return entry;
 	}
 
 	/**
@@ -59,13 +75,31 @@ public class RaftLog {
 	 * @param lastToCommit index of the last entry to be committed (inclusive)
 	 * @throws MissingEntriesException if the entry with index `lastToCommit` does not exist
 	 */
-	public void commitToIndex(int lastToCommit) throws MissingEntriesException {
+	public String commitToIndex(int lastToCommit) throws MissingEntriesException {
 		if (lastToCommit > getLastEntryIndex())
 			throw new MissingEntriesException(lastToCommit, getLastEntryIndex());
+		String returnValue = null;
 		for (int i = getLastCommittedIndex(); i < lastToCommit; i++) {
 			lastCommitted = logEntries.get(i);
 			lastCommitted.commit();
+			returnValue = applyLog(lastCommitted);
 		}
+		return returnValue;
+	}
+
+	/**
+	 * Apply the command to state machine
+	 * @param entry log entry to apply
+	 */
+	private String applyLog(LogEntry entry) {
+		String command = entry.command;
+		String[] commandArgs = command.split("\\s+");
+		if ("set".equals(commandArgs[0])) {
+			return stateMachine.set(commandArgs[1], commandArgs[2]);
+		} else if ("del".equals(commandArgs[0])) {
+			return stateMachine.del(commandArgs[1]);
+		}
+		return "Invalid arguments";
 	}
 
 	/**
@@ -108,5 +142,13 @@ public class RaftLog {
 
 	public List<LogEntry> getLogEntries() {
 		return logEntries;
+	}
+
+	public void setLogEntries(List<LogEntry> logEntries) {
+		this.logEntries = logEntries;
+	}
+
+	public StateMachine getStateMachine() {
+		return stateMachine;
 	}
 }

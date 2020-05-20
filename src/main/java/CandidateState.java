@@ -208,4 +208,9 @@ public class CandidateState extends AbstractState {
 			writePersistentState();
 		}
 	}
+
+	@Override
+	public String handleCommand(String command, int timeout) {
+		return null;
+	}
 }

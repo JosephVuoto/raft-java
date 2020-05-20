@@ -21,6 +21,9 @@ public abstract class AbstractState {
 	protected static int commitIndex = 0;
 	/* index of highest log entry applied to state machine (initialized to 0, increases monotonically) */
 	protected static int lastApplied = 0;
+	/* path for persistent states: currentTerm, votedFor, logEntries,
+	    will be initialized when the node starts, in NodeStarter  */
+	private static String statePersistencePath = "./state.json";
 
 	/* The node itself */
 	protected NodeImpl node;
@@ -63,6 +66,26 @@ public abstract class AbstractState {
 	                                             LogEntry[] entries, int leaderCommit);
 
 	/**
+	 * Handle the command from user's command line
+	 * @param command Command string e.g. "set id 1"
+	 * @param timeout in millisecond
+	 * @return result
+	 */
+	abstract public String handleCommand(String command, int timeout);
+	/**
+	 * Persistent state on all servers:
+	 * (Updated on stable storage before responding to RPCs)
+	 * currentTerm, votedFor, log[]
+	 */
+	protected void writePersistentState() {
+		PersistentState state = new PersistentState();
+		state.setVoteFor(votedFor);
+		state.setCurrentTerm(currentTerm);
+		state.setLogEntries(node.getRaftLog().getLogEntries());
+		JsonFileUtil.writePersistentState(statePersistencePath, state);
+	}
+
+	/**
 	 * Immutable class to represent a response to a vote request
 	 */
 	public static class VoteResponse implements Serializable {
@@ -86,5 +109,19 @@ public abstract class AbstractState {
 			this.success = success;
 			this.term = term;
 		}
+	}
+
+	public static void setStatePersistencePath(String statePersistencePath) {
+		AbstractState.statePersistencePath = statePersistencePath;
+	}
+
+	/**
+	 * Recover from crashing
+	 * @param state persistent state from a file
+	 */
+	public void restorePersistentState(PersistentState state) {
+		votedFor = state.getVoteFor();
+		currentTerm = state.getCurrentTerm();
+		node.getRaftLog().setLogEntries(state.getLogEntries());
 	}
 }
