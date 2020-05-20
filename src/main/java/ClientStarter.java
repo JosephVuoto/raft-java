@@ -1,31 +1,18 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ClientStarter {
 	public static void main(String[] args) {
-		String configPath = "./config.json";
-		if (args.length == 1) {
-			configPath = args[0];
-		}
-		/* read clustet info from a config file */
-		Config config = JsonFileUtil.readConfig(configPath);
-		List<Config.NodeInfo> clusterInfo = config.clusterInfo;
-
-		/* A map of remote nodes: <node id, IClientInterface instance> */
-		Map<Integer, IClientInterface> remoteNodes = new HashMap<>();
-
-		/* For reading commands */
+		// TODO: implement
+		// 1. read cluster info in a config file
+		// 2. get IClientInterface instance from the remote registry
+		// 3. Read from command line and invoke the remote method
 		InstructionParser parser = new InstructionParser();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
 		while (true) {
 			try {
 				Instruction instruction = parser.parseInstruction(reader.readLine());
@@ -36,51 +23,8 @@ public class ClientStarter {
 				if (instruction.command == Instruction.Command.QUIT) {
 					break;
 				}
-
-				if (instruction.command == Instruction.Command.SEND) {
-					int nodeDirect = clusterInfo.get(0).nodeId;
-					if (instruction.argOptions.size() > 0) {
-						// TODO: Since there is only possible argOptions type, the first element will be NODE_DIRECT
-						// Cannot think of a better way for now :)
-						nodeDirect = Integer.parseInt(instruction.argOptions.get(0).getValue());
-					}
-
-					/* The target remote node */
-					IClientInterface remoteNode;
-					if (!remoteNodes.containsKey(nodeDirect)) {
-						/* Haven't got connection to the node yet */
-						Config.NodeInfo info = null;
-						/* Find information of the node with given id */
-						for (Config.NodeInfo nodeInfo : clusterInfo) {
-							if (nodeInfo.nodeId == nodeDirect) {
-								info = nodeInfo;
-							}
-						}
-						if (info == null) {
-							System.err.println("No such node: " + nodeDirect);
-							continue;
-						}
-						/* Construct a rmi url for the remote node */
-						String remoteUrl = "rmi://" + info.address + ":" + info.port + "/node" + info.nodeId;
-						try {
-							/* Get the INode stub from remote registry */
-							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
-							/* Add to the map. Next time it can get the connection from the map directly */
-							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (NotBoundException | MalformedURLException | RemoteException e) {
-							e.printStackTrace();
-							continue;
-						}
-					} else {
-						remoteNode = remoteNodes.get(nodeDirect);
-					}
-					/* Invoke sendCommand */
-					// TODO: implement retry
-					remoteNode.sendCommand(instruction.payload);
-				} else if (instruction.command == Instruction.Command.LIST) {
-					// TODO: print a list of commands as instruction
-				}
-
+				// TODO: invoke sendCommand(String command)
+				System.out.println(instruction.toString());
 			} catch (IOException e) {
 				try {
 					reader.close();

@@ -6,11 +6,11 @@ public class RaftLog {
 	private LogEntry lastCommitted;
 
 	/**
-	 * @return the index of the most recent log entry (committed or otherwise; 0 if no entries exist).
+	 * @return the index of the most recent log entry (committed or otherwise).
 	 * Note: indexing begins at 1.
 	 */
 	public int getLastEntryIndex() {
-		return logEntries.size();
+		return logEntries.size() + 1;
 	}
 
 	/**
@@ -24,14 +24,10 @@ public class RaftLog {
 	/**
 	 * Retrieve the term number associated with a particular log entry.
 	 * @param entryIndex the index of the log entry
-	 * @return the term number associated with the log entry (0 if entry doesn't exist)
+	 * @return the term number associated with the log entry
 	 */
 	public int getTermOfEntry(int entryIndex) {
-		try {
-			return logEntries.get(entryIndex).term;
-		} catch (IndexOutOfBoundsException e) {
-			return 0;
-		}
+		return logEntries.get(entryIndex).term;
 	}
 
 	/**
