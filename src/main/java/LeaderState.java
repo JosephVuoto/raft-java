@@ -79,6 +79,11 @@ public class LeaderState extends AbstractState {
 		for (int t = 0; t < timeout; t += POLL_INTERVAL) {
 			if (entry.isCommitted())
 				return "OK";
+			try {
+				Thread.sleep(POLL_INTERVAL);
+			} catch (InterruptedException e) {
+				return "Unsuccessful: interrupted";
+			}
 		}
 		return "Timed out";
 	}
