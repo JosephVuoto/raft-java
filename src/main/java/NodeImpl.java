@@ -77,10 +77,10 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @see IClientInterface#sendCommand(String)
+	 * @see IClientInterface#sendCommand(String, int)
 	 */
 	@Override
-	public String sendCommand(String command) throws RemoteException {
+	public String sendCommand(String command, int timeout) throws RemoteException {
 		// TODO: deal with commands
 		return "Stub";
 	}
