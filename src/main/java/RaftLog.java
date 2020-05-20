@@ -60,8 +60,7 @@ public class RaftLog {
 		logEntries.subList(fromIndex - 1, logEntries.size()).clear();
 
 		// append new entries
-		for (LogEntry entry : entries)
-			logEntries.add(entry);
+		logEntries.addAll(entries);
 	}
 
 	/**
@@ -69,14 +68,16 @@ public class RaftLog {
 	 * @param lastToCommit index of the last entry to be committed (inclusive)
 	 * @throws MissingEntriesException if the entry with index `lastToCommit` does not exist
 	 */
-	public void commitToIndex(int lastToCommit) throws MissingEntriesException {
+	public String commitToIndex(int lastToCommit) throws MissingEntriesException {
 		if (lastToCommit > getLastEntryIndex())
 			throw new MissingEntriesException(lastToCommit, getLastEntryIndex());
+		String returnValue = null;
 		for (int i = getLastCommittedIndex(); i < lastToCommit; i++) {
 			lastCommitted = logEntries.get(i);
 			lastCommitted.commit();
-			applyLog(lastCommitted);
+			returnValue = applyLog(lastCommitted);
 		}
+		return returnValue;
 	}
 
 	/**
@@ -134,5 +135,9 @@ public class RaftLog {
 
 	public List<LogEntry> getLogEntries() {
 		return logEntries;
+	}
+
+	public StateMachine getStateMachine() {
+		return stateMachine;
 	}
 }
