@@ -35,4 +35,14 @@ public class StateMachine {
 	public Set<String> keys() {
 		return db.keySet();
 	}
+
+	/**
+	 * delete command. e.g. [delete name]
+	 * @param key key
+	 * @return result
+	 */
+	public String del(String key) {
+		db.remove(key);
+		return "OK";
+	}
 }
