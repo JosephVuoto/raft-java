@@ -82,7 +82,6 @@ public class FollowerState extends AbstractState {
 	@Override
 	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
 	                                    int leaderCommit) {
-
 		// Rules for all server
 		resetElectionTimer();
 		// When recover from a crash, we may have to set the leaderId.
@@ -103,7 +102,8 @@ public class FollowerState extends AbstractState {
 		//    follow it (§5.3)
 		// 4. Append any new entries not already in the log
 		try {
-			node.getRaftLog().writeEntries(prevLogIndex, new ArrayList<LogEntry>(Arrays.asList(entries)));
+			// write to the next position, add 1.
+			node.getRaftLog().writeEntries(prevLogIndex + 1, new ArrayList<LogEntry>(Arrays.asList(entries)));
 			writePersistentState();
 		} catch (RaftLog.MissingEntriesException e) {
 			System.out.println("Entries missing: " + e);
@@ -112,8 +112,16 @@ public class FollowerState extends AbstractState {
 		}
 		// 5. If leaderCommit > commitIndex, set commitIndex =
 		// min(leaderCommit, index of last new entry)
-		if (leaderCommit > commitIndex)
+		if (leaderCommit > commitIndex) {
 			commitIndex = Math.min(leaderCommit, node.getRaftLog().getLastEntryIndex());
+			// Once the follower learns that a log entry is committed,
+			// it applies the entry to its local state machine(in log order).
+			try {
+				node.getRaftLog().commitToIndex(commitIndex);
+			} catch (RaftLog.MissingEntriesException e) {
+				//TODO: log
+			}
+		}
 		return new AppendResponse(true, currentTerm);
 	}
 
