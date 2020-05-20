@@ -151,10 +151,10 @@ public class CandidateState extends AbstractState {
     }
 
     private void becomeLeader() {
-        // TODO: Ensure the invoker returns in a right way and become a leader smoothly
+        node.setState(new LeaderState(node));
     }
 
     private void becomeFollower() {
-        // TODO: Ensure the invoker returns in a right way and become a follower smoothly
+        node.setState(new FollowerState(node));
     }
 }
