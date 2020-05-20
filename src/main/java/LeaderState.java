@@ -197,10 +197,11 @@ public class LeaderState extends AbstractState {
 	 * Note: only commit if a majority of nodes has an entry from the current term.
 	 */
 	private void checkReplication() {
-		for (int i = node.getRaftLog().getLastCommittedIndex(); i > commitIndex; i--) {
+		for (int i = node.getRaftLog().getLastEntryIndex(); i > commitIndex; i--) {
 			if (majorityHasLogEntry(i) && node.getRaftLog().getTermOfEntry(i) == currentTerm) {
 				try {
 					node.getRaftLog().commitToIndex(i);
+					commitIndex = i;
 					sendEarlyHeartbeats();
 				} catch (RaftLog.MissingEntriesException e) {
 					// TODO: logging (execution should never reach here)
