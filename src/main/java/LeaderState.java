@@ -71,6 +71,11 @@ public class LeaderState extends AbstractState {
 		return new AppendResponse(false, currentTerm);
 	}
 
+	@Override
+	public String handleCommand(String command, int timeout) {
+		return null;
+	}
+
 	/**
 	 * Send the initial heartbeat to each remote node.
 	 * This method will also schedule the following heartbeat.
