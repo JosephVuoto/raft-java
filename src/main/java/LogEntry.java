@@ -1,18 +1,18 @@
 import java.io.Serializable;
 
-public class LogEntry<T> implements Serializable {
+public class LogEntry implements Serializable {
 	public final int index;
 	public final int term;
-	public final T command;
+	public final String command;
 	private boolean committed = false;
 
-	public LogEntry(int index, int term, T command) {
+	public LogEntry(int index, int term, String command) {
 		this.index = index;
 		this.term = term;
 		this.command = command;
 	}
 
-	public LogEntry(int index, int term, T command, boolean committed) {
+	public LogEntry(int index, int term, String command, boolean committed) {
 		this.index = index;
 		this.term = term;
 		this.command = command;
@@ -24,6 +24,6 @@ public class LogEntry<T> implements Serializable {
 	}
 
 	public void commit() {
-		this.committed = committed;
+		this.committed = true;
 	}
 }

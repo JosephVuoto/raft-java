@@ -21,6 +21,9 @@ public abstract class AbstractState {
 	protected static int commitIndex = 0;
 	/* index of highest log entry applied to state machine (initialized to 0, increases monotonically) */
 	protected static int lastApplied = 0;
+	/* path for persistent states: currentTerm, votedFor, logEntries,
+	    will be initialized when the node starts, in NodeStarter  */
+	private static String statePersistencePath = "./state.json";
 
 	/* The node itself */
 	protected NodeImpl node;
@@ -63,6 +66,19 @@ public abstract class AbstractState {
 	                                             LogEntry[] entries, int leaderCommit);
 
 	/**
+	 * Persistent state on all servers:
+	 * (Updated on stable storage before responding to RPCs)
+	 * currentTerm, votedFor, log[]
+	 */
+	protected void writePersistentState() {
+		PersistentState state = new PersistentState();
+		state.setVoteFor(votedFor);
+		state.setCurrentTerm(currentTerm);
+		state.setLogEntries(node.getRaftLog().getLogEntries());
+		JsonFileUtil.writePersistentState(statePersistencePath, state);
+	}
+
+	/**
 	 * Immutable class to represent a response to a vote request
 	 */
 	public static class VoteResponse implements Serializable {
@@ -86,5 +102,9 @@ public abstract class AbstractState {
 			this.success = success;
 			this.term = term;
 		}
+	}
+
+	public static void setStatePersistencePath(String statePersistencePath) {
+		AbstractState.statePersistencePath = statePersistencePath;
 	}
 }
