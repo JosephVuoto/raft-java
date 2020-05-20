@@ -76,7 +76,7 @@ public class ClientStarter {
 					}
 					/* Invoke sendCommand */
 					// TODO: implement retry
-					remoteNode.sendCommand(instruction.payload);
+					remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
 				} else if (instruction.command == Instruction.Command.LIST) {
 					// TODO: print a list of commands as instruction
 				}
@@ -231,6 +231,8 @@ public class ClientStarter {
 	 * - A (possibly empty) payload
 	 */
 	private static class Instruction {
+		private static final int DEFAULT_TIMEOUT = 5000;
+
 		private enum Command {
 			/* Quit the client program */
 			QUIT,

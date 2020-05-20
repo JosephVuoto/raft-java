@@ -15,6 +15,8 @@ public class LeaderState extends AbstractState {
 	/* a map of each remote node's active pending heartbeat */
 	private final Map<INode, Heartbeat> activeHeartbeats;
 
+	private static final int POLL_INTERVAL = 50;
+
 	public LeaderState(NodeImpl node) {
 		super(node);
 		// set majority threshold to ceil((cluster size + 1) / 2)
@@ -71,7 +73,19 @@ public class LeaderState extends AbstractState {
 
 	@Override
 	public String handleCommand(String command, int timeout) {
-		return null;
+		LogEntry entry = node.getRaftLog().addNewEntry(currentTerm, command);
+		sendEarlyHeartbeats();
+
+		for (int t = 0; t < timeout; t += POLL_INTERVAL) {
+			if (entry.isCommitted())
+				return "OK";
+			try {
+				Thread.sleep(POLL_INTERVAL);
+			} catch (InterruptedException e) {
+				return "Unsuccessful: interrupted";
+			}
+		}
+		return "Timed out";
 	}
 
 	/**
@@ -126,7 +140,7 @@ public class LeaderState extends AbstractState {
 		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode)), logEntries,
 		                  node.getRaftLog().getLastCommittedIndex());
 		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
-		CompletableFuture.supplyAsync(heartbeat).thenAccept(
+		CompletableFuture.supplyAsync(nextHeartbeat).thenAccept(
 		    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
 	}
 
@@ -139,7 +153,22 @@ public class LeaderState extends AbstractState {
 			if (scheduled != null)
 				scheduled.deactivate();
 
-			// TODO: construct and send updated heartbeat
+			// construct and send updated heartbeat
+			int prevLogIndex = nextIndex.get(remoteNode) - 1;
+			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+			LogEntry[] logEntries;
+			try {
+				logEntries = (LogEntry[])node.getRaftLog()
+				                 .getLogEntries()
+				                 .subList(prevLogIndex, node.getRaftLog().getLastCommittedIndex())
+				                 .toArray();
+			} catch (IndexOutOfBoundsException e) {
+				logEntries = new LogEntry[] {};
+			}
+			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
+			Heartbeat early = new Heartbeat(remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			activeHeartbeats.put(remoteNode, early);
+			CompletableFuture.supplyAsync(early).thenAccept(response -> scheduleNextHeartbeat(early, response));
 		}
 	}
 
@@ -182,10 +211,12 @@ public class LeaderState extends AbstractState {
 	 * Note: only commit if a majority of nodes has an entry from the current term.
 	 */
 	private void checkReplication() {
-		for (int i = node.getRaftLog().getLastCommittedIndex(); i > commitIndex; i--) {
+		for (int i = node.getRaftLog().getLastEntryIndex(); i > commitIndex; i--) {
 			if (majorityHasLogEntry(i) && node.getRaftLog().getTermOfEntry(i) == currentTerm) {
 				try {
 					node.getRaftLog().commitToIndex(i);
+					commitIndex = i;
+					sendEarlyHeartbeats();
 				} catch (RaftLog.MissingEntriesException e) {
 					// TODO: logging (execution should never reach here)
 					return;
@@ -291,6 +322,7 @@ public class LeaderState extends AbstractState {
 		 */
 		private void deactivate() {
 			active = false;
+			activeHeartbeats.remove(remoteNode);
 		}
 
 		/**
