@@ -11,6 +11,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	private RaftLog raftLog;
 	/* list of remote nodes in the cluster */
 	private List<INode> remoteNodes;
+	/* The state machine (k-v db) */
+	private StateMachine stateMachine = new StateMachine();
 
 	/**
 	 * Constructor
@@ -82,6 +84,11 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public String sendCommand(String command) throws RemoteException {
 		// TODO: deal with commands
+		// e.g. if the command is [set name joseph], then :
+		// 1. redirect to the leader if needed
+		// 2. if the command or the log is committed, then call:
+		//		<stateMachine.set("name", "joseph");>
+		//		to apply the command to the state machine
 		return "Stub";
 	}
 }
