@@ -141,8 +141,8 @@ public class LeaderState extends AbstractState {
 		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode)), logEntries,
 		                  node.getRaftLog().getLastCommittedIndex());
 		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
-		CompletableFuture.supplyAsync(nextHeartbeat).thenAccept(
-		    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
+		CompletableFuture.supplyAsync(nextHeartbeat)
+		    .thenAccept(newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
 	}
 
 	/**
