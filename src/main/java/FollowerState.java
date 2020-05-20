@@ -36,7 +36,6 @@ public class FollowerState extends AbstractState {
 		// Init value
 		votedFor = -1;
 		currentLeaderId = -1;
-		writePersistentState();
 		// Set the timer
 		resetElectionTimer();
 	}
