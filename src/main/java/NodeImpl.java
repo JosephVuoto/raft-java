@@ -87,6 +87,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	 */
 	@Override
 	public String sendCommand(String command, int timeout) throws RemoteException {
+		logger.info("node #" + nodeId + ": received command: " + command);
 		String[] commandArgs = command.split("\\s+");
 		if (commandArgs.length == 0) {
 			return "Invalid command";

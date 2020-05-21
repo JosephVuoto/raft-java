@@ -1,5 +1,6 @@
 import java.rmi.RemoteException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -162,10 +163,10 @@ public class LeaderState extends AbstractState {
 			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
 			LogEntry[] logEntries;
 			try {
-				logEntries = (LogEntry[])node.getRaftLog()
+				logEntries = node.getRaftLog()
 				                 .getLogEntries()
 				                 .subList(prevLogIndex, node.getRaftLog().getLastCommittedIndex())
-				                 .toArray();
+				                 .toArray(new LogEntry[0]);
 			} catch (IndexOutOfBoundsException e) {
 				logEntries = new LogEntry[] {};
 			}

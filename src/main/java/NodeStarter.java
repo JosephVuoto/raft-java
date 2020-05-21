@@ -67,7 +67,7 @@ public class NodeStarter {
 
 								/* Succeed, add to the list */
 								remoteNodeList.add(remoteNode);
-								logger.info("Connected to node #" + info.nodeId);
+								logger.info("node #" + nodeId + ": Connected to node #" + info.nodeId);
 								break;
 							} catch (ConnectException | NotBoundException e) {
 								Thread.sleep(retryInterval);
