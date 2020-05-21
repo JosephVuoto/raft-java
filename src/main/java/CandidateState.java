@@ -2,8 +2,10 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.*;
+import org.apache.log4j.Logger;
 
 public class CandidateState extends AbstractState {
+	static final Logger logger = Logger.getLogger(CandidateState.class.getName());
 
 	private final int MAJORITY_THRESHOLD;
 	protected boolean isWaitingForVoteResponse;
@@ -92,7 +94,7 @@ public class CandidateState extends AbstractState {
 			node.getRaftLog().writeEntries(remotePrevLogIndex, new ArrayList<>(Arrays.asList(remoteEntries)));
 			writePersistentState();
 		} catch (RaftLog.MissingEntriesException e) {
-			System.out.println("Entries missing: " + e);
+			logger.debug("Entries missing");
 		} catch (RaftLog.OverwriteCommittedEntryException e) {
 			System.out.println("Overwrite Committed Entry is not allow: " + e);
 		}

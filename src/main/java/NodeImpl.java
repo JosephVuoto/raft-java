@@ -2,8 +2,11 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Set;
+import org.apache.log4j.Logger;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
+	static final Logger logger = Logger.getLogger(NodeImpl.class.getName());
+
 	/* A unique identifier of the node */
 	private int nodeId;
 	/* The node's state (follower, candidate or leader) */
@@ -24,6 +27,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	}
 
 	public void setState(AbstractState state) {
+		logger.info("node #" + nodeId + " now is in " + state.getClass().getSimpleName());
 		this.state = state;
 		state.start();
 	}

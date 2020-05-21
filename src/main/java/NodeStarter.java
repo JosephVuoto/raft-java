@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.log4j.Logger;
 
 /**
  * Starter class to start a node
  */
 public class NodeStarter {
+	static final Logger logger = Logger.getLogger(NodeStarter.class.getName());
+
 	public static void main(String[] args) {
 		String configPath = null;
 		if (args.length == 1) {
@@ -64,12 +67,13 @@ public class NodeStarter {
 
 								/* Succeed, add to the list */
 								remoteNodeList.add(remoteNode);
+								logger.info("Connected to node #" + info.nodeId);
 								break;
-							} catch (ConnectException e) {
+							} catch (ConnectException | NotBoundException e) {
 								Thread.sleep(retryInterval);
 							}
 						}
-					} catch (NotBoundException | MalformedURLException | RemoteException | InterruptedException e) {
+					} catch (MalformedURLException | RemoteException | InterruptedException e) {
 						e.printStackTrace();
 					}
 					countDownLatch.countDown();

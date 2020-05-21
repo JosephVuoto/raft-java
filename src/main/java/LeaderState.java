@@ -3,8 +3,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import org.apache.log4j.Logger;
 
 public class LeaderState extends AbstractState {
+	static final Logger logger = Logger.getLogger(LeaderState.class.getName());
+
 	private final int MAJORITY_THRESHOLD;
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */

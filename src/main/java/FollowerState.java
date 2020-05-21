@@ -3,9 +3,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
+import org.apache.log4j.Logger;
 import sun.rmi.runtime.Log;
 
 public class FollowerState extends AbstractState {
+	static final Logger logger = Logger.getLogger(FollowerState.class.getName());
+
 	// Use for remembering the last leader id
 	private int currentLeaderId = -1;
 	// Use for election timeout
@@ -102,10 +105,10 @@ public class FollowerState extends AbstractState {
 		// 4. Append any new entries not already in the log
 		try {
 			// write to the next position, add 1.
-			node.getRaftLog().writeEntries(prevLogIndex + 1, new ArrayList<LogEntry>(Arrays.asList(entries)));
+			node.getRaftLog().writeEntries(prevLogIndex + 1, new ArrayList<>(Arrays.asList(entries)));
 			writePersistentState();
 		} catch (RaftLog.MissingEntriesException e) {
-			System.out.println("Entries missing: " + e);
+			logger.debug("Entries missing");
 		} catch (RaftLog.OverwriteCommittedEntryException e) {
 			System.out.println("Overwrite Committed Entry is not allow: " + e);
 		}
@@ -149,7 +152,7 @@ public class FollowerState extends AbstractState {
 	 * @param votedFor
 	 */
 	private void setVoteFor(int votedFor) {
-		this.votedFor = votedFor;
+		AbstractState.votedFor = votedFor;
 		writePersistentState();
 	}
 
@@ -160,7 +163,7 @@ public class FollowerState extends AbstractState {
 	 */
 	private boolean setCurrentTerm(int term) {
 		if (term > currentTerm) {
-			this.votedFor = -1;
+			votedFor = -1;
 			currentTerm = term;
 			writePersistentState();
 			return true;
