@@ -141,8 +141,8 @@ public class LeaderState extends AbstractState {
 		// schedule next heartbeat with appropriate delay; this will be an empty heartbeat
 		LogEntry[] logEntries = {};
 		Heartbeat nextHeartbeat =
-		    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteNode),
-		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode)), logEntries,
+		    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteNode) - 1,
+		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode) - 1), logEntries,
 		                  node.getRaftLog().getLastCommittedIndex());
 		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
 		CompletableFuture.supplyAsync(nextHeartbeat)
