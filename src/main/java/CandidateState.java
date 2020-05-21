@@ -11,7 +11,6 @@ public class CandidateState extends AbstractState {
 	boolean isWaitingForVoteResponse = false;
 	protected int myVotes;
 
-
 	public CandidateState(NodeImpl node) {
 		super(node);
 		MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
@@ -51,8 +50,8 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-										int leaderCommit){
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// Much of the thing is like the Follower
 		// One different: If Append Entries received from new leader: convert to follower
 		// 1. Reply false if term < currentTerm (§5.1)
@@ -62,8 +61,8 @@ public class CandidateState extends AbstractState {
 		// Need to finish all the jobs before going back to a follower
 		electionScheduleFuture.cancel(true);
 		setCurrentTerm(term);
-		return becomeFollower(-1, leaderId).appendEntries(term, leaderId,
-				prevLogIndex, prevLogTerm, entries, leaderCommit);
+		return becomeFollower(-1, leaderId)
+		    .appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
 	private void sendRequestVote2All() {

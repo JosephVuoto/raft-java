@@ -74,8 +74,8 @@ public class FollowerState extends AbstractState {
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
 	@Override
-	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
@@ -127,7 +127,7 @@ public class FollowerState extends AbstractState {
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
 			if (leader == null) {
-				res = "No Such node with the leader ID: "+ currentLeaderId;
+				res = "No Such node with the leader ID: " + currentLeaderId;
 			} else {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}
