@@ -1,6 +1,7 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Logger;
 
@@ -14,7 +15,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/* log entries */
 	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
-	private List<INode> remoteNodes;
+	private Map<Integer, INode> remoteNodes;
 
 	/**
 	 * Constructor
@@ -51,6 +52,11 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
+		//		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
+		//		            ", prevLogTerm = " + prevLogTerm);
+		for (LogEntry entry : entries) {
+			logger.info(entry);
+		}
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
@@ -72,12 +78,12 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 		this.raftLog = raftLog;
 	}
 
-	public List<INode> getRemoteNodes() {
+	public Map<Integer, INode> getRemoteNodes() {
 		return remoteNodes;
 	}
 
-	public void setRemoteNodes(List<INode> nodes) {
-		remoteNodes = nodes;
+	public void setRemoteNodes(Map<Integer, INode> remoteNodes) {
+		this.remoteNodes = remoteNodes;
 	}
 
 	/**
@@ -87,6 +93,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	 */
 	@Override
 	public String sendCommand(String command, int timeout) throws RemoteException {
+		logger.info("node #" + nodeId + ": received command: " + command);
 		String[] commandArgs = command.split("\\s+");
 		if (commandArgs.length == 0) {
 			return "Invalid command";

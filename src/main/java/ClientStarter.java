@@ -87,7 +87,8 @@ public class ClientStarter {
 					}
 					/* Invoke sendCommand */
 					// TODO: implement retry
-					remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
+					String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
+					System.out.println(res);
 				} else if (instruction.command == Instruction.Command.LIST) {
 					// TODO: print a list of commands as instruction
 				}

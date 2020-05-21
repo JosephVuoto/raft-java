@@ -1,8 +1,11 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.apache.log4j.Logger;
 
 public class RaftLog {
+	static final Logger logger = Logger.getLogger(RaftLog.class.getName());
+
 	private List<LogEntry> logEntries;
 	private LogEntry lastCommitted;
 	private final StateMachine stateMachine;
@@ -50,6 +53,7 @@ public class RaftLog {
 	 */
 	public void writeEntries(int fromIndex, List<LogEntry> entries)
 	    throws MissingEntriesException, OverwriteCommittedEntryException {
+		//		logger.info("writeEntries invoked: fromIndex = " + fromIndex);
 		// ensure the log is continuous
 		if (fromIndex > getLastEntryIndex() + 1)
 			throw new MissingEntriesException(fromIndex, getLastEntryIndex());

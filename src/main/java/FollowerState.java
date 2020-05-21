@@ -108,9 +108,9 @@ public class FollowerState extends AbstractState {
 			node.getRaftLog().writeEntries(prevLogIndex + 1, new ArrayList<>(Arrays.asList(entries)));
 			writePersistentState();
 		} catch (RaftLog.MissingEntriesException e) {
-			logger.debug("Entries missing");
+			logger.debug("node #" + node.getNodeId() + ": Entries missing");
 		} catch (RaftLog.OverwriteCommittedEntryException e) {
-			System.out.println("Overwrite Committed Entry is not allow: " + e);
+			logger.debug("node #" + node.getNodeId() + ": Overwrite Committed Entry is not allow");
 		}
 		// 5. If leaderCommit > commitIndex, set commitIndex =
 		// min(leaderCommit, index of last new entry)
@@ -135,12 +135,14 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public String handleCommand(String command, int timeout) {
-		String res = null;
+		String res;
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
-			res = ((IClientInterface)leader).sendCommand(command, timeout);
-		} catch (IndexOutOfBoundsException e) {
-			res = "No Such node with the ID: " + e;
+			if (leader == null) {
+				res = "No Such node with the ID";
+			} else {
+				res = ((IClientInterface)leader).sendCommand(command, timeout);
+			}
 		} catch (RemoteException e) {
 			res = "Cannot reach the remote node: " + e;
 		}
