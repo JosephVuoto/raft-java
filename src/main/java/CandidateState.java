@@ -8,7 +8,6 @@ public class CandidateState extends AbstractState {
 	private final int MAJORITY_THRESHOLD;
 	ScheduledExecutorService scheduledExecutorService;
 	private ScheduledFuture electionScheduleFuture;
-	boolean isWaitingForVoteResponse = false;
 	protected int myVotes;
 
 	public CandidateState(NodeImpl node) {
@@ -25,7 +24,6 @@ public class CandidateState extends AbstractState {
 		myVotes = 1;
 		// Reset election timer
 		resetElectionTimer();
-		isWaitingForVoteResponse = true;
 		// Send RequestVote RPCs to all other servers
 		sendRequestVote2All();
 	}
@@ -59,7 +57,6 @@ public class CandidateState extends AbstractState {
 			return new AppendResponse(false, currentTerm);
 		// If Append Entries received from new leader: convert to follower
 		// Need to finish all the jobs before going back to a follower
-		electionScheduleFuture.cancel(true);
 		setCurrentTerm(term);
 		return becomeFollower(-1, leaderId)
 		    .appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
@@ -73,11 +70,9 @@ public class CandidateState extends AbstractState {
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {
-					    // sleep until the election time is scheduled to be sent
 					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
 				    } catch (RemoteException e) {
 					    return null;
-					    // TODO
 				    }
 			    })
 			    .thenAccept(this::handleVoteRes);
@@ -88,9 +83,7 @@ public class CandidateState extends AbstractState {
 		// stop if no longer candidate
 		if (node == null)
 			return;
-		if (voteResponse == null) {
-			// TODO
-		}
+
 		if (voteResponse.voteGranted) {
 			myVotes += 1;
 			if (myVotes >= MAJORITY_THRESHOLD) {
@@ -103,6 +96,7 @@ public class CandidateState extends AbstractState {
 	 * Change to follower
 	 */
 	private FollowerState becomeFollower(int voteFor, int leaderId) {
+		electionScheduleFuture.cancel(true);
 		FollowerState followerState = new FollowerState(node, voteFor, leaderId);
 		node.setState(followerState);
 		this.node = null;
@@ -113,6 +107,7 @@ public class CandidateState extends AbstractState {
 	 * Change to leader
 	 */
 	private void becomeLeader() {
+		electionScheduleFuture.cancel(true);
 		node.setState(new LeaderState(node));
 		this.node = null;
 	}
