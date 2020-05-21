@@ -81,7 +81,7 @@ public class CandidateState extends AbstractState {
 
 	private synchronized void handleVoteRes(VoteResponse voteResponse) {
 		// stop if no longer candidate
-		if (node == null)
+		if (node == null || voteResponse == null)
 			return;
 
 		if (voteResponse.voteGranted) {
