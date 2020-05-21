@@ -53,7 +53,7 @@ public class RaftLog {
 	 */
 	public void writeEntries(int fromIndex, List<LogEntry> entries)
 	    throws MissingEntriesException, OverwriteCommittedEntryException {
-		logger.info("writeEntries invoked: fromIndex = " + fromIndex);
+		//		logger.info("writeEntries invoked: fromIndex = " + fromIndex);
 		// ensure the log is continuous
 		if (fromIndex > getLastEntryIndex() + 1)
 			throw new MissingEntriesException(fromIndex, getLastEntryIndex());

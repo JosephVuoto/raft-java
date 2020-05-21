@@ -165,7 +165,7 @@ public class LeaderState extends AbstractState {
 			try {
 				logEntries = node.getRaftLog()
 				                 .getLogEntries()
-				                 .subList(prevLogIndex, node.getRaftLog().getLastCommittedIndex())
+				                 .subList(prevLogIndex, node.getRaftLog().getLastEntryIndex())
 				                 .toArray(new LogEntry[0]);
 			} catch (IndexOutOfBoundsException e) {
 				logEntries = new LogEntry[] {};

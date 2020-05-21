@@ -26,4 +26,10 @@ public class LogEntry implements Serializable {
 	public void commit() {
 		this.committed = true;
 	}
+
+	@Override
+	public String toString() {
+		return "LogEntry{"
+		    + "index=" + index + ", term=" + term + ", command='" + command + '\'' + ", committed=" + committed + '}';
+	}
 }
