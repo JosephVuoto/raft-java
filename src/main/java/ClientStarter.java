@@ -78,8 +78,12 @@ public class ClientStarter {
 							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
 							/* Add to the map. Next time it can get the connection from the map directly */
 							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (NotBoundException | MalformedURLException | RemoteException e) {
+						} catch (NotBoundException | MalformedURLException e) {
 							e.printStackTrace();
+							continue;
+						} catch (RemoteException e) {
+							System.out.println("Cannot access the target node");
+							remoteNodes.remove(nodeDirect);
 							continue;
 						}
 					} else {
