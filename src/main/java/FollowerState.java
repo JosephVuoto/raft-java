@@ -49,7 +49,7 @@ public class FollowerState extends AbstractState {
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
 	@Override
-	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// Rules for all server
 		resetElectionTimer();
 		if (term > currentTerm)
@@ -82,8 +82,8 @@ public class FollowerState extends AbstractState {
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
 	@Override
-	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// Rules for all server
 		resetElectionTimer();
 		// When recover from a crash, we may have to set the leaderId.

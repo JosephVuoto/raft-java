@@ -51,7 +51,7 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// deny vote if requested from a stale candidate (term < currentTerm), the candidate's log is not up to date
 		// (lastLogIndex < commitIndex) or the candidate is competing in the same election term (term == currentTerm);
 		// this node has already won the election for currentTerm since it's the leader
@@ -68,8 +68,8 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// revert to follower if this node's term is out of date
 		if (term > currentTerm)
 			resign(term);

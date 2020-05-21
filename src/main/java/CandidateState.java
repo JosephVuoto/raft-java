@@ -31,8 +31,8 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public VoteResponse requestVote(int remoteTerm, int remoteCandidateId, int remoteLastLogIndex,
-	                                int remoteLastLogTerm) {
+	public synchronized VoteResponse requestVote(int remoteTerm, int remoteCandidateId, int remoteLastLogIndex,
+	                                             int remoteLastLogTerm) {
 		if (!isWaitingForVoteResponse) {
 			// if I am not waiting my votes
 			if (remoteTerm < currentTerm || remoteLastLogIndex < commitIndex) {
@@ -63,8 +63,9 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public AppendResponse appendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
-	                                    int remotePrevLogTerm, LogEntry[] remoteEntries, int remoteLeaderCommit) {
+	public synchronized AppendResponse appendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
+	                                                 int remotePrevLogTerm, LogEntry[] remoteEntries,
+	                                                 int remoteLeaderCommit) {
 
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
@@ -144,7 +145,7 @@ public class CandidateState extends AbstractState {
 		}
 	}
 
-	private void handleVoteRes(VoteResponse voteResponse) {
+	private synchronized void handleVoteRes(VoteResponse voteResponse) {
 		// stop if no longer candidate
 		if (node == null)
 			return;

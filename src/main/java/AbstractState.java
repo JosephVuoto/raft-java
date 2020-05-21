@@ -77,7 +77,7 @@ public abstract class AbstractState {
 	 * (Updated on stable storage before responding to RPCs)
 	 * currentTerm, votedFor, log[]
 	 */
-	protected void writePersistentState() {
+	protected synchronized void writePersistentState() {
 		PersistentState state = new PersistentState();
 		state.setVoteFor(votedFor);
 		state.setCurrentTerm(currentTerm);
