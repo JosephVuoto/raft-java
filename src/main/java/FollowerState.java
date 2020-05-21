@@ -135,12 +135,14 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public String handleCommand(String command, int timeout) {
-		String res = null;
+		String res;
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
-			res = ((IClientInterface)leader).sendCommand(command, timeout);
-		} catch (IndexOutOfBoundsException e) {
-			res = "No Such node with the ID: " + e;
+			if (leader == null) {
+				res = "No Such node with the ID";
+			} else {
+				res = ((IClientInterface) leader).sendCommand(command, timeout);
+			}
 		} catch (RemoteException e) {
 			res = "Cannot reach the remote node: " + e;
 		}

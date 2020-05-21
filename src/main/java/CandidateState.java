@@ -117,7 +117,7 @@ public class CandidateState extends AbstractState {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (INode remoteNode : node.getRemoteNodes()) {
+		for (INode remoteNode : node.getRemoteNodes().values()) {
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {

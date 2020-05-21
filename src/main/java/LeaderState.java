@@ -35,7 +35,7 @@ public class LeaderState extends AbstractState {
 	 */
 	public void start() {
 		// initialise nextIndex and matchIndex with default initial values
-		for (INode remoteNode : node.getRemoteNodes()) {
+		for (INode remoteNode : node.getRemoteNodes().values()) {
 			nextIndex.put(remoteNode, node.getRaftLog().getLastEntryIndex() + 1);
 			matchIndex.put(remoteNode, 0);
 		}
@@ -98,7 +98,7 @@ public class LeaderState extends AbstractState {
 	 * This method will also schedule the following heartbeat.
 	 */
 	private void initiateHeartbeats() {
-		for (INode remoteNode : node.getRemoteNodes()) {
+		for (INode remoteNode : node.getRemoteNodes().values()) {
 			int prevLogIndex = nextIndex.get(remoteNode) - 1;
 			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
 			LogEntry[] logEntries = {};
@@ -153,7 +153,7 @@ public class LeaderState extends AbstractState {
 	 * Deactivate all scheduled heartbeats and send a more up-to-date heartbeat to remote nodes instead.
 	 */
 	private void sendEarlyHeartbeats() {
-		for (INode remoteNode : node.getRemoteNodes()) {
+		for (INode remoteNode : node.getRemoteNodes().values()) {
 			Heartbeat scheduled = activeHeartbeats.get(remoteNode);
 			if (scheduled != null)
 				scheduled.deactivate();
