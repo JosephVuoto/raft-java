@@ -1,10 +1,8 @@
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.*;
 import org.apache.log4j.Logger;
-import sun.rmi.runtime.Log;
 
 public class FollowerState extends AbstractState {
 	static final Logger logger = Logger.getLogger(FollowerState.class.getName());
