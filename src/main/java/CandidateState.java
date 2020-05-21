@@ -22,6 +22,7 @@ public class CandidateState extends AbstractState {
 	}
 
 	public void start() {
+		++currentTerm;
 		scheduleAnotherRound();
 		requestAllRemoteNodesToVote();
 	}
