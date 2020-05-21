@@ -127,8 +127,8 @@ public class LeaderState extends AbstractState {
 			    new Heartbeat(heartbeat.remoteNode, 0, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
 			                  heartbeat.logEntries, heartbeat.lastCommitted);
 			activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
-			CompletableFuture.supplyAsync(heartbeat).thenAccept(
-			    newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
+			CompletableFuture.supplyAsync(nextHeartbeat)
+			    .thenAccept(newResponse -> scheduleNextHeartbeat(nextHeartbeat, newResponse));
 			return;
 		}
 
