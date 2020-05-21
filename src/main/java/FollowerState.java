@@ -141,7 +141,7 @@ public class FollowerState extends AbstractState {
 			if (leader == null) {
 				res = "No Such node with the ID";
 			} else {
-				res = ((IClientInterface) leader).sendCommand(command, timeout);
+				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}
 		} catch (RemoteException e) {
 			res = "Cannot reach the remote node: " + e;

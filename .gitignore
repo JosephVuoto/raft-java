@@ -37,3 +37,7 @@ build/
 node_modules
 coverage
 *.log
+
+state1.json
+state2.json
+state3.json

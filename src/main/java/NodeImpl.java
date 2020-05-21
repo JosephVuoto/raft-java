@@ -52,6 +52,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
+		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
+		            ", prevLogTerm = " + prevLogTerm);
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
