@@ -181,14 +181,26 @@ public class CandidateState extends AbstractState {
 	 * @return the res of the command sending
 	 */
 	private String sendToLeader(String command, int timeout) {
+//		String res = "Fail to write the log";
+//		try {
+//			INode leader = node.getRemoteNodes().get(votedFor);
+//			res = ((IClientInterface)leader).sendCommand(command, timeout);
+//		} catch (IndexOutOfBoundsException e) {
+//			System.out.println("No Such node with the ID: " + e);
+//		} catch (RemoteException e) {
+//			System.out.println("Cannot reach the remote node: " + e);
+//		}
+//		return res;
 		String res = "Fail to write the log";
 		try {
 			INode leader = node.getRemoteNodes().get(votedFor);
-			res = ((IClientInterface)leader).sendCommand(command, timeout);
-		} catch (IndexOutOfBoundsException e) {
-			System.out.println("No Such node with the ID: " + e);
+			if (leader == null) {
+				res = "No Such node with the leader ID: "+ votedFor;
+			} else {
+				res = ((IClientInterface)leader).sendCommand(command, timeout);
+			}
 		} catch (RemoteException e) {
-			System.out.println("Cannot reach the remote node: " + e);
+			res = "Cannot reach the remote node: " + e;
 		}
 		return res;
 	}
