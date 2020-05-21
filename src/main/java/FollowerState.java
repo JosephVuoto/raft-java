@@ -15,16 +15,21 @@ public class FollowerState extends AbstractState {
 
 	public FollowerState(NodeImpl node) {
 		super(node);
+		init();
+		currentLeaderId = -1;
 	}
 
 	/**
-	 * Construct a Follower with a LeaderID
+	 * Set back to follower with specific value
 	 * @param node
-	 * @param LeaderId
+	 * @param voteFor
+	 * @param leaderId
 	 */
-	public FollowerState(NodeImpl node, int LeaderId) {
+	public FollowerState(NodeImpl node, int voteFor, int leaderId) {
 		super(node);
-		currentLeaderId = LeaderId;
+		init();
+		this.setVoteFor(voteFor);
+		this.currentLeaderId = leaderId;
 	}
 
 	/**
@@ -32,11 +37,6 @@ public class FollowerState extends AbstractState {
 	 * timeout timer for heartbeat and start it
 	 */
 	public void start() {
-		// Use for election timeout
-		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-		// Init value
-		votedFor = -1;
-		currentLeaderId = -1;
 		// Set the timer
 		resetElectionTimer();
 	}
@@ -48,8 +48,6 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
-		// Rules for all server
-		resetElectionTimer();
 		if (term > currentTerm)
 			setCurrentTerm(term);
 		// Reply false if term < currentTerm (§5.1)
@@ -71,7 +69,6 @@ public class FollowerState extends AbstractState {
 		} else {
 			return new VoteResponse(false, currentTerm);
 		}
-		// What if term > currentTerm?
 	}
 
 	/**
@@ -145,6 +142,14 @@ public class FollowerState extends AbstractState {
 			res = "Cannot reach the remote node: " + e;
 		}
 		return res;
+	}
+
+	/**
+	 * initial function
+	 */
+	private void init() {
+		// Use for election timeout
+		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 	}
 
 	/**
