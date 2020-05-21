@@ -3,12 +3,12 @@ import java.util.Random;
 
 public abstract class AbstractState {
 	/* time interval for the leader to send heartbeat messages */
-	protected static final int HEART_BEAT_INTERVAL = 500;
+	protected static final int HEART_BEAT_INTERVAL = 1000;
 
 	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
 	 * an upper and lower bound here  */
-	protected static final int ELECTION_TIME_OUT_MIN = 1000;
-	protected static final int ELECTION_TIME_OUT_MAX = 2000;
+	protected static final int ELECTION_TIME_OUT_MIN = 2000;
+	protected static final int ELECTION_TIME_OUT_MAX = 4000;
 	/* the actual election timeout */
 	protected static int electionTimeout;
 	/* latest term server has seen (initialized to 0 on first boot, increases monotonically) updated on stable storage
