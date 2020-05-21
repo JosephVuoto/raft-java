@@ -16,6 +16,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
 	private Map<Integer, INode> remoteNodes;
+	private Map<Integer, String> remoteUrls;
 
 	/**
 	 * Constructor
@@ -52,15 +53,18 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
-		//		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
-		//		            ", prevLogTerm = " + prevLogTerm);
+		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
+		            ", prevLogTerm = " + prevLogTerm + ", term = " + term);
+		logger.info("Local current term: " + AbstractState.currentTerm);
+		for (LogEntry entry : entries) {
+			logger.info(entry);
+		}
 		for (LogEntry entry : entries) {
 			logger.info(entry);
 		}
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
-	@Override
 	public int getNodeId() {
 		return nodeId;
 	}
@@ -84,6 +88,18 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 
 	public void setRemoteNodes(Map<Integer, INode> remoteNodes) {
 		this.remoteNodes = remoteNodes;
+	}
+
+	public void setRemoteUrls(Map<Integer, String> remoteUrls) {
+		this.remoteUrls = remoteUrls;
+	}
+
+	public void updateRemoteNode(int id, INode node) {
+		remoteNodes.put(id, node);
+	}
+
+	public String getRemoteUrl(int id) {
+		return remoteUrls.get(id);
 	}
 
 	/**

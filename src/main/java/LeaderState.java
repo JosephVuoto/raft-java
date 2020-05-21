@@ -1,3 +1,6 @@
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +51,7 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
 		// deny vote if requested from a stale candidate (term < currentTerm), the candidate's log is not up to date
 		// (lastLogIndex < commitIndex) or the candidate is competing in the same election term (term == currentTerm);
 		// this node has already won the election for currentTerm since it's the leader
@@ -65,8 +68,8 @@ public class LeaderState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// revert to follower if this node's term is out of date
 		if (term > currentTerm)
 			resign(term);
@@ -310,7 +313,27 @@ public class LeaderState extends AbstractState {
 				return remoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm, logEntries,
 				                                lastCommitted);
 
-			} catch (InterruptedException | RemoteException e) {
+			} catch (RemoteException e) {
+				/* Connection lost, reconnect... */
+				int remoteId = -1;
+				for (int id : node.getRemoteNodes().keySet()) {
+					if (remoteNode == node.getRemoteNodes().get(id)) {
+						remoteId = id;
+					}
+				}
+				if (remoteId == -1) {
+					return null;
+				}
+				String remoteUrl = node.getRemoteUrl(remoteId);
+				try {
+					INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
+					node.updateRemoteNode(remoteId, newRemoteNode);
+				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+					// TODO: ignore
+				}
+				return null;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 				return null;
 			}
 		}

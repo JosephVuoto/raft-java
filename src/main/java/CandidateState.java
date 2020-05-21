@@ -1,3 +1,6 @@
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,10 +18,11 @@ public class CandidateState extends AbstractState {
 		super(node);
 		MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
 		isWaitingForVoteResponse = false;
-		myVotes = 0;
+		myVotes = 1;
 	}
 
 	public void start() {
+		++currentTerm;
 		scheduleAnotherRound();
 		requestAllRemoteNodesToVote();
 	}
@@ -28,8 +32,8 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
-	public VoteResponse requestVote(int remoteTerm, int remoteCandidateId, int remoteLastLogIndex,
-	                                int remoteLastLogTerm) {
+	public synchronized VoteResponse requestVote(int remoteTerm, int remoteCandidateId, int remoteLastLogIndex,
+	                                             int remoteLastLogTerm) {
 		if (!isWaitingForVoteResponse) {
 			// if I am not waiting my votes
 			if (remoteTerm < currentTerm || remoteLastLogIndex < commitIndex) {
@@ -60,8 +64,9 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public AppendResponse appendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
-	                                    int remotePrevLogTerm, LogEntry[] remoteEntries, int remoteLeaderCommit) {
+	public synchronized AppendResponse appendEntries(int remoteTerm, int remoteLeaderId, int remotePrevLogIndex,
+	                                                 int remotePrevLogTerm, LogEntry[] remoteEntries,
+	                                                 int remoteLeaderCommit) {
 
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
@@ -117,15 +122,23 @@ public class CandidateState extends AbstractState {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (INode remoteNode : node.getRemoteNodes().values()) {
+		for (Integer remoteId : node.getRemoteNodes().keySet()) {
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {
 					    // sleep until the election time is scheduled to be sent
-
+					    INode remoteNode = node.getRemoteNodes().get(remoteId);
 					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
 
 				    } catch (RemoteException e) {
+					    /* Connection lost, reconnect... */
+					    String remoteUrl = node.getRemoteUrl(remoteId);
+					    try {
+						    INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
+						    node.updateRemoteNode(remoteId, newRemoteNode);
+					    } catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+						    // TODO: ignore
+					    }
 					    return new VoteResponse(false, -1);
 				    }
 			    })
@@ -133,7 +146,7 @@ public class CandidateState extends AbstractState {
 		}
 	}
 
-	private void handleVoteRes(VoteResponse voteResponse) {
+	private synchronized void handleVoteRes(VoteResponse voteResponse) {
 		// stop if no longer candidate
 		if (node == null)
 			return;
@@ -181,21 +194,21 @@ public class CandidateState extends AbstractState {
 	 * @return the res of the command sending
 	 */
 	private String sendToLeader(String command, int timeout) {
-//		String res = "Fail to write the log";
-//		try {
-//			INode leader = node.getRemoteNodes().get(votedFor);
-//			res = ((IClientInterface)leader).sendCommand(command, timeout);
-//		} catch (IndexOutOfBoundsException e) {
-//			System.out.println("No Such node with the ID: " + e);
-//		} catch (RemoteException e) {
-//			System.out.println("Cannot reach the remote node: " + e);
-//		}
-//		return res;
+		//		String res = "Fail to write the log";
+		//		try {
+		//			INode leader = node.getRemoteNodes().get(votedFor);
+		//			res = ((IClientInterface)leader).sendCommand(command, timeout);
+		//		} catch (IndexOutOfBoundsException e) {
+		//			System.out.println("No Such node with the ID: " + e);
+		//		} catch (RemoteException e) {
+		//			System.out.println("Cannot reach the remote node: " + e);
+		//		}
+		//		return res;
 		String res = "Fail to write the log";
 		try {
 			INode leader = node.getRemoteNodes().get(votedFor);
 			if (leader == null) {
-				res = "No Such node with the leader ID: "+ votedFor;
+				res = "No Such node with the leader ID: " + votedFor;
 			} else {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}

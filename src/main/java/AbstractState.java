@@ -7,8 +7,8 @@ public abstract class AbstractState {
 
 	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
 	 * an upper and lower bound here  */
-	protected static final int ELECTION_TIME_OUT_MIN = 2000;
-	protected static final int ELECTION_TIME_OUT_MAX = 6000;
+	protected static final int ELECTION_TIME_OUT_MIN = 5000;
+	protected static final int ELECTION_TIME_OUT_MAX = 10000;
 	/* the actual election timeout */
 	protected static int electionTimeout;
 	/* latest term server has seen (initialized to 0 on first boot, increases monotonically) updated on stable storage
@@ -77,7 +77,7 @@ public abstract class AbstractState {
 	 * (Updated on stable storage before responding to RPCs)
 	 * currentTerm, votedFor, log[]
 	 */
-	protected void writePersistentState() {
+	protected synchronized void writePersistentState() {
 		PersistentState state = new PersistentState();
 		state.setVoteFor(votedFor);
 		state.setCurrentTerm(currentTerm);
@@ -112,10 +112,8 @@ public abstract class AbstractState {
 
 		@Override
 		public String toString() {
-			return "AppendResponse{" +
-					"success=" + success +
-					", term=" + term +
-					'}';
+			return "AppendResponse{"
+			    + "success=" + success + ", term=" + term + '}';
 		}
 	}
 

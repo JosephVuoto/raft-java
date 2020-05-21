@@ -1,7 +1,4 @@
 {
-    "nodeId":1,
-    "port":2222,
-    "statePath":"./state1.json",
     "clusterInfo":[
         {
             "nodeId":2,
