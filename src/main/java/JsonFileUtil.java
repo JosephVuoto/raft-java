@@ -61,7 +61,6 @@ public class JsonFileUtil {
 			inputStream.read(bytes);
 			return new String(bytes, StandardCharsets.UTF_8);
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		return "";
 	}
@@ -91,15 +90,6 @@ public class JsonFileUtil {
 	 * @param path File path
 	 */
 	private static void createFile(String path) {
-		if (path.contains("/")) {
-			String[] split = path.split("/");
-			String fileName = split[split.length - 1];
-			String dirPath = path.replace(fileName, "");
-			File dir = new File(dirPath);
-			if (!dir.exists()) {
-				dir.mkdirs();
-			}
-		}
 		File file = new File(path);
 		if (!file.exists()) {
 			try {

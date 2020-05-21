@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -11,9 +12,19 @@ import java.util.regex.Pattern;
 
 public class ClientStarter {
 	public static void main(String[] args) {
-		String configPath = "./config.json";
+		String configPath = null;
 		if (args.length == 1) {
 			configPath = args[0];
+		} else {
+			ClassLoader classLoader = NodeStarter.class.getClassLoader();
+			URL resource = classLoader.getResource("clusterConfig.json");
+			if (resource != null) {
+				configPath = resource.getPath();
+			}
+		}
+		if (configPath == null) {
+			System.err.println("No config file!");
+			return;
 		}
 		/* read clustet info from a config file */
 		Config config = JsonFileUtil.readConfig(configPath);

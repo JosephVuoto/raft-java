@@ -1,4 +1,6 @@
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -8,15 +10,28 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.log4j.Logger;
 
 /**
  * Starter class to start a node
  */
 public class NodeStarter {
+	static final Logger logger = Logger.getLogger(NodeStarter.class.getName());
+
 	public static void main(String[] args) {
-		String configPath = "./config.json";
+		String configPath = null;
 		if (args.length == 1) {
 			configPath = args[0];
+		} else {
+			ClassLoader classLoader = NodeStarter.class.getClassLoader();
+			URL resource = classLoader.getResource("nodeConfig.json");
+			if (resource != null) {
+				configPath = resource.getPath();
+			}
+		}
+		if (configPath == null) {
+			System.err.println("No config file!");
+			return;
 		}
 		Config config = JsonFileUtil.readConfig(configPath);
 		int nodeId = config.nodeId;
@@ -42,12 +57,23 @@ public class NodeStarter {
 				service.submit(() -> {
 					/* Construct a rmi url for the remote node */
 					String remoteUrl = "rmi://" + info.address + ":" + info.port + "/node" + info.nodeId;
+					/* Retry connecting for 30 * 1s, wait for other node to start */
+					int retryTimes = 30, retryInterval = 1000;
 					try {
 						/* Get the INode stub from remote registry */
-						INode remoteNode = (INode)Naming.lookup(remoteUrl);
-						/* Add to the list */
-						remoteNodeList.add(remoteNode);
-					} catch (NotBoundException | MalformedURLException | RemoteException e) {
+						for (int i = 0; i < retryTimes; i++) {
+							try {
+								INode remoteNode = (INode)Naming.lookup(remoteUrl);
+
+								/* Succeed, add to the list */
+								remoteNodeList.add(remoteNode);
+								logger.info("Connected to node #" + info.nodeId);
+								break;
+							} catch (ConnectException | NotBoundException e) {
+								Thread.sleep(retryInterval);
+							}
+						}
+					} catch (MalformedURLException | RemoteException | InterruptedException e) {
 						e.printStackTrace();
 					}
 					countDownLatch.countDown();
