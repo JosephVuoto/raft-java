@@ -81,18 +81,19 @@ public class ClientStarter {
 						} catch (NotBoundException | MalformedURLException e) {
 							e.printStackTrace();
 							continue;
-						} catch (RemoteException e) {
-							System.out.println("Cannot access the target node");
-							remoteNodes.remove(nodeDirect);
-							continue;
 						}
 					} else {
 						remoteNode = remoteNodes.get(nodeDirect);
 					}
 					/* Invoke sendCommand */
 					// TODO: implement retry
-					String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
-					System.out.println(res);
+					try {
+						String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
+						System.out.println(res);
+					} catch (RemoteException e) {
+						System.out.println("Connection failed. Please try again");
+						remoteNodes.remove(nodeDirect);
+					}
 				} else if (instruction.command == Instruction.Command.LIST) {
 					// TODO: print a list of commands as instruction
 				}

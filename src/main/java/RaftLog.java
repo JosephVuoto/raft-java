@@ -149,8 +149,18 @@ public class RaftLog {
 		return logEntries;
 	}
 
+	/* Recover the log after crash */
 	public void setLogEntries(List<LogEntry> logEntries) {
 		this.logEntries = logEntries;
+		/* Apply committed entries to the state machine */
+		for (LogEntry entry : logEntries) {
+			if (entry.isCommitted()) {
+				lastCommitted = entry;
+				applyLog(entry);
+			} else {
+				break;
+			}
+		}
 	}
 
 	public StateMachine getStateMachine() {
