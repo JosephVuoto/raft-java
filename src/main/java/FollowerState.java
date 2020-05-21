@@ -118,7 +118,7 @@ public class FollowerState extends AbstractState {
 			try {
 				node.getRaftLog().commitToIndex(commitIndex);
 			} catch (RaftLog.MissingEntriesException e) {
-				//TODO: log
+				// TODO: log
 			}
 		}
 		return new AppendResponse(true, currentTerm);
@@ -183,5 +183,3 @@ public class FollowerState extends AbstractState {
 		}, electionTimeout, TimeUnit.MILLISECONDS);
 	}
 }
-
-
