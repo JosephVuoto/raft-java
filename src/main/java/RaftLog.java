@@ -71,6 +71,7 @@ public class RaftLog {
 	public synchronized LogEntry addNewEntry(int term, String command) {
 		int index = getLastEntryIndex() + 1;
 		LogEntry entry = new LogEntry(index, term, command);
+		logEntries.add(entry);
 		return entry;
 	}
 
