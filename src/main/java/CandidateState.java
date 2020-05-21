@@ -79,7 +79,7 @@ public class CandidateState extends AbstractState {
 		}
 	}
 
-	private void handleVoteRes(VoteResponse voteResponse) {
+	private synchronized void handleVoteRes(VoteResponse voteResponse) {
 		// stop if no longer candidate
 		if (node == null)
 			return;
