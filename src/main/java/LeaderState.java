@@ -1,3 +1,6 @@
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
@@ -310,7 +313,27 @@ public class LeaderState extends AbstractState {
 				return remoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm, logEntries,
 				                                lastCommitted);
 
-			} catch (InterruptedException | RemoteException e) {
+			} catch (RemoteException e) {
+				/* Connection lost, reconnect... */
+				int remoteId = -1;
+				for (int id : node.getRemoteNodes().keySet()) {
+					if (remoteNode == node.getRemoteNodes().get(id)) {
+						remoteId = id;
+					}
+				}
+				if (remoteId == -1) {
+					return null;
+				}
+				String remoteUrl = node.getRemoteUrl(remoteId);
+				try {
+					INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
+					node.updateRemoteNode(remoteId, newRemoteNode);
+				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+					// TODO: ignore
+				}
+				return null;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 				return null;
 			}
 		}

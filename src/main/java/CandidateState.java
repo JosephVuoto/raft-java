@@ -1,3 +1,6 @@
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,19 +120,27 @@ public class CandidateState extends AbstractState {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (INode remoteNode : node.getRemoteNodes().values()) {
+		for (Integer remoteId: node.getRemoteNodes().keySet()) {
 			CompletableFuture
-			    .supplyAsync(() -> {
-				    try {
-					    // sleep until the election time is scheduled to be sent
+					.supplyAsync(() -> {
+						try {
+							// sleep until the election time is scheduled to be sent
+							INode remoteNode = node.getRemoteNodes().get(remoteId);
+							return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
 
-					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
-
-				    } catch (RemoteException e) {
-					    return new VoteResponse(false, -1);
-				    }
-			    })
-			    .thenAccept(this::handleVoteRes);
+						} catch (RemoteException e) {
+							/* Connection lost, reconnect... */
+							String remoteUrl = node.getRemoteUrl(remoteId);
+							try {
+								INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
+								node.updateRemoteNode(remoteId, newRemoteNode);
+							} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+								// TODO: ignore
+							}
+							return new VoteResponse(false, -1);
+						}
+					})
+					.thenAccept(this::handleVoteRes);
 		}
 	}
 

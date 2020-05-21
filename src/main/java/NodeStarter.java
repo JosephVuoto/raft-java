@@ -53,6 +53,7 @@ public class NodeStarter {
 			final CountDownLatch countDownLatch = new CountDownLatch(clusterInfo.size());
 			/* A map of remote nodes */
 			Map<Integer, INode> remoteNodeMap = new HashMap<>();
+			Map<Integer, String> remoteUrlMap = new HashMap<>();
 
 			for (Config.NodeInfo info : clusterInfo) {
 				/* Submit a new task to the thread pool */
@@ -69,6 +70,7 @@ public class NodeStarter {
 
 								/* Succeed, add to the list */
 								remoteNodeMap.put(info.nodeId, remoteNode);
+								remoteUrlMap.put(info.nodeId, remoteUrl);
 								logger.info("node #" + nodeId + ": Connected to node #" + info.nodeId);
 								break;
 							} catch (ConnectException | NotBoundException e) {
@@ -85,6 +87,7 @@ public class NodeStarter {
 			/* Wait until all thread are finished, so that the remoteNodeList contains all remote nodes */
 			countDownLatch.await();
 			node.setRemoteNodes(remoteNodeMap);
+			node.setRemoteUrls(remoteUrlMap);
 			/* Set path for persistent states */
 			AbstractState.setStatePersistencePath(config.statePath);
 			PersistentState state = JsonFileUtil.readPersistentState(config.statePath);
