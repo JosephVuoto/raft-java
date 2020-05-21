@@ -112,10 +112,8 @@ public abstract class AbstractState {
 
 		@Override
 		public String toString() {
-			return "AppendResponse{" +
-					"success=" + success +
-					", term=" + term +
-					'}';
+			return "AppendResponse{"
+			    + "success=" + success + ", term=" + term + '}';
 		}
 	}
 

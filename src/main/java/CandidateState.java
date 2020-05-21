@@ -18,7 +18,7 @@ public class CandidateState extends AbstractState {
 		super(node);
 		MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
 		isWaitingForVoteResponse = false;
-		myVotes = 0;
+		myVotes = 1;
 	}
 
 	public void start() {
@@ -120,27 +120,27 @@ public class CandidateState extends AbstractState {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (Integer remoteId: node.getRemoteNodes().keySet()) {
+		for (Integer remoteId : node.getRemoteNodes().keySet()) {
 			CompletableFuture
-					.supplyAsync(() -> {
-						try {
-							// sleep until the election time is scheduled to be sent
-							INode remoteNode = node.getRemoteNodes().get(remoteId);
-							return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
+			    .supplyAsync(() -> {
+				    try {
+					    // sleep until the election time is scheduled to be sent
+					    INode remoteNode = node.getRemoteNodes().get(remoteId);
+					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
 
-						} catch (RemoteException e) {
-							/* Connection lost, reconnect... */
-							String remoteUrl = node.getRemoteUrl(remoteId);
-							try {
-								INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
-								node.updateRemoteNode(remoteId, newRemoteNode);
-							} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
-								// TODO: ignore
-							}
-							return new VoteResponse(false, -1);
-						}
-					})
-					.thenAccept(this::handleVoteRes);
+				    } catch (RemoteException e) {
+					    /* Connection lost, reconnect... */
+					    String remoteUrl = node.getRemoteUrl(remoteId);
+					    try {
+						    INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
+						    node.updateRemoteNode(remoteId, newRemoteNode);
+					    } catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+						    // TODO: ignore
+					    }
+					    return new VoteResponse(false, -1);
+				    }
+			    })
+			    .thenAccept(this::handleVoteRes);
 		}
 	}
 
@@ -192,21 +192,21 @@ public class CandidateState extends AbstractState {
 	 * @return the res of the command sending
 	 */
 	private String sendToLeader(String command, int timeout) {
-//		String res = "Fail to write the log";
-//		try {
-//			INode leader = node.getRemoteNodes().get(votedFor);
-//			res = ((IClientInterface)leader).sendCommand(command, timeout);
-//		} catch (IndexOutOfBoundsException e) {
-//			System.out.println("No Such node with the ID: " + e);
-//		} catch (RemoteException e) {
-//			System.out.println("Cannot reach the remote node: " + e);
-//		}
-//		return res;
+		//		String res = "Fail to write the log";
+		//		try {
+		//			INode leader = node.getRemoteNodes().get(votedFor);
+		//			res = ((IClientInterface)leader).sendCommand(command, timeout);
+		//		} catch (IndexOutOfBoundsException e) {
+		//			System.out.println("No Such node with the ID: " + e);
+		//		} catch (RemoteException e) {
+		//			System.out.println("Cannot reach the remote node: " + e);
+		//		}
+		//		return res;
 		String res = "Fail to write the log";
 		try {
 			INode leader = node.getRemoteNodes().get(votedFor);
 			if (leader == null) {
-				res = "No Such node with the leader ID: "+ votedFor;
+				res = "No Such node with the leader ID: " + votedFor;
 			} else {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}

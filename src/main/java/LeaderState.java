@@ -326,7 +326,7 @@ public class LeaderState extends AbstractState {
 				}
 				String remoteUrl = node.getRemoteUrl(remoteId);
 				try {
-					INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
+					INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
 					node.updateRemoteNode(remoteId, newRemoteNode);
 				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
 					// TODO: ignore
