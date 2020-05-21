@@ -109,6 +109,14 @@ public abstract class AbstractState {
 			this.success = success;
 			this.term = term;
 		}
+
+		@Override
+		public String toString() {
+			return "AppendResponse{" +
+					"success=" + success +
+					", term=" + term +
+					'}';
+		}
 	}
 
 	public static void setStatePersistencePath(String statePersistencePath) {

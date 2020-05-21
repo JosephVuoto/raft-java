@@ -139,7 +139,7 @@ public class FollowerState extends AbstractState {
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
 			if (leader == null) {
-				res = "No Such node with the ID";
+				res = "No Such node with the leader ID: "+ currentLeaderId;
 			} else {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}
