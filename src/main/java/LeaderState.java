@@ -241,7 +241,7 @@ public class LeaderState extends AbstractState {
 	 * @return true if a majority has replicated the log entry, else false
 	 */
 	private boolean majorityHasLogEntry(int i) {
-		int replicatedOn = 0;
+		int replicatedOn = 1;
 		for (Map.Entry<INode, Integer> entry : matchIndex.entrySet())
 			if (entry.getValue() >= i && ++replicatedOn >= MAJORITY_THRESHOLD)
 				return true;
