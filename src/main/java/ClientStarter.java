@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -78,15 +79,14 @@ public class ClientStarter {
 							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
 							/* Add to the map. Next time it can get the connection from the map directly */
 							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (NotBoundException | MalformedURLException e) {
-							e.printStackTrace();
+						} catch (ConnectException | NotBoundException | MalformedURLException e) {
+							System.out.println("Connection failed. Please try other nodes");
 							continue;
 						}
 					} else {
 						remoteNode = remoteNodes.get(nodeDirect);
 					}
 					/* Invoke sendCommand */
-					// TODO: implement retry
 					try {
 						String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
 						System.out.println(res);

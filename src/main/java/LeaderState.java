@@ -108,7 +108,8 @@ public class LeaderState extends AbstractState {
 			LogEntry[] logEntries = {};
 			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
 
-			Heartbeat heartbeat = new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			Heartbeat heartbeat =
+			    new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
 			activeHeartbeats.put(remoteId, heartbeat);
 			CompletableFuture.supplyAsync(heartbeat).thenAccept(response -> scheduleNextHeartbeat(heartbeat, response));
 		}
@@ -128,8 +129,8 @@ public class LeaderState extends AbstractState {
 		// if the heartbeat was executed but a RemoteException occurred, retry
 		if (response == null) {
 			Heartbeat nextHeartbeat =
-			    new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
-			                  heartbeat.logEntries, heartbeat.lastCommitted);
+			    new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL, heartbeat.prevLogIndex,
+			                  heartbeat.prevLogTerm, heartbeat.logEntries, heartbeat.lastCommitted);
 			activeHeartbeats.put(heartbeat.remoteId, nextHeartbeat);
 			CompletableFuture.supplyAsync(nextHeartbeat)
 			    .thenAccept(newResponse -> scheduleNextHeartbeat(nextHeartbeat, newResponse));
@@ -144,10 +145,10 @@ public class LeaderState extends AbstractState {
 
 		// schedule next heartbeat with appropriate delay; this will be an empty heartbeat
 		LogEntry[] logEntries = {};
-		Heartbeat nextHeartbeat =
-		    new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteId) - 1,
-		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteId) - 1), logEntries,
-		                  node.getRaftLog().getLastCommittedIndex());
+		Heartbeat nextHeartbeat = new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL,
+		                                        nextIndex.get(heartbeat.remoteId) - 1,
+		                                        node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteId) - 1),
+		                                        logEntries, node.getRaftLog().getLastCommittedIndex());
 		activeHeartbeats.put(heartbeat.remoteId, nextHeartbeat);
 		CompletableFuture.supplyAsync(nextHeartbeat)
 		    .thenAccept(newResponse -> scheduleNextHeartbeat(nextHeartbeat, newResponse));
@@ -176,7 +177,8 @@ public class LeaderState extends AbstractState {
 				logEntries = new LogEntry[] {};
 			}
 			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
-			Heartbeat early = new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			Heartbeat early =
+			    new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
 			activeHeartbeats.put(remoteId, early);
 			CompletableFuture.supplyAsync(early).thenAccept(response -> scheduleNextHeartbeat(early, response));
 		}
@@ -292,8 +294,8 @@ public class LeaderState extends AbstractState {
 		public final LogEntry[] logEntries;
 		public final int lastCommitted;
 
-		private Heartbeat(int remoteId, INode remoteNode, int delay, int prevLogIndex, int prevLogTerm, LogEntry[] logEntries,
-		                  int lastCommitted) {
+		private Heartbeat(int remoteId, INode remoteNode, int delay, int prevLogIndex, int prevLogTerm,
+		                  LogEntry[] logEntries, int lastCommitted) {
 			this.remoteId = remoteId;
 			this.remoteNode = remoteNode;
 			this.delay = delay;
@@ -319,7 +321,7 @@ public class LeaderState extends AbstractState {
 
 			} catch (RemoteException e) {
 				/* Connection lost, reconnect... */
-				logger.debug("Connetion to node #" + remoteId + " is lost, retrying");
+				//				logger.debug("Connetion to node #" + remoteId + " is lost, retrying");
 				String remoteUrl = node.getRemoteUrl(remoteId);
 				try {
 					// Reconnect to the node and call the remote appendEntries again
@@ -330,8 +332,8 @@ public class LeaderState extends AbstractState {
 					return newRemoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
 					                                   logEntries, lastCommitted);
 				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
-					// TODO: ignore
-					logger.debug("Retry failed");
+					// ignore
+					//					logger.debug("Retry failed");
 				}
 				return null;
 			} catch (InterruptedException e) {
