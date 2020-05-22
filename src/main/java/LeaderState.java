@@ -3,9 +3,9 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
@@ -15,12 +15,12 @@ public class LeaderState extends AbstractState {
 	private final int MAJORITY_THRESHOLD;
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */
-	private final Map<INode, Integer> nextIndex;
+	private final Map<Integer, Integer> nextIndex;
 	/* for each server, index of highest log entry known to be replicated on server (initialized to 0, increases
 	 * monotonically). The data structure is <node id, index of highest log entry...>. Reinitialized after election */
-	private final Map<INode, Integer> matchIndex;
+	private final Map<Integer, Integer> matchIndex;
 	/* a map of each remote node's active pending heartbeat */
-	private final Map<INode, Heartbeat> activeHeartbeats;
+	private final Map<Integer, Heartbeat> activeHeartbeats;
 
 	private static final int POLL_INTERVAL = 50;
 
@@ -28,9 +28,9 @@ public class LeaderState extends AbstractState {
 		super(node);
 		// set majority threshold to ceil((cluster size + 1) / 2)
 		MAJORITY_THRESHOLD = (node.getRemoteNodes().size() + 1) / 2 + 1;
-		nextIndex = new HashMap<>();
-		matchIndex = new HashMap<>();
-		activeHeartbeats = new HashMap<>();
+		nextIndex = new ConcurrentHashMap<>();
+		matchIndex = new ConcurrentHashMap<>();
+		activeHeartbeats = new ConcurrentHashMap<>();
 	}
 
 	/**
@@ -38,9 +38,9 @@ public class LeaderState extends AbstractState {
 	 */
 	public void start() {
 		// initialise nextIndex and matchIndex with default initial values
-		for (INode remoteNode : node.getRemoteNodes().values()) {
-			nextIndex.put(remoteNode, node.getRaftLog().getLastEntryIndex() + 1);
-			matchIndex.put(remoteNode, 0);
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			nextIndex.put(remoteId, node.getRaftLog().getLastEntryIndex() + 1);
+			matchIndex.put(remoteId, 0);
 		}
 
 		initiateHeartbeats();
@@ -101,14 +101,15 @@ public class LeaderState extends AbstractState {
 	 * This method will also schedule the following heartbeat.
 	 */
 	private void initiateHeartbeats() {
-		for (INode remoteNode : node.getRemoteNodes().values()) {
-			int prevLogIndex = nextIndex.get(remoteNode) - 1;
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			INode remoteNode = node.getRemoteNodes().get(remoteId);
+			int prevLogIndex = nextIndex.get(remoteId) - 1;
 			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
 			LogEntry[] logEntries = {};
 			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
 
-			Heartbeat heartbeat = new Heartbeat(remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
-			activeHeartbeats.put(remoteNode, heartbeat);
+			Heartbeat heartbeat = new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			activeHeartbeats.put(remoteId, heartbeat);
 			CompletableFuture.supplyAsync(heartbeat).thenAccept(response -> scheduleNextHeartbeat(heartbeat, response));
 		}
 	}
@@ -127,9 +128,9 @@ public class LeaderState extends AbstractState {
 		// if the heartbeat was executed but a RemoteException occurred, retry
 		if (response == null) {
 			Heartbeat nextHeartbeat =
-			    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
+			    new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
 			                  heartbeat.logEntries, heartbeat.lastCommitted);
-			activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
+			activeHeartbeats.put(heartbeat.remoteId, nextHeartbeat);
 			CompletableFuture.supplyAsync(nextHeartbeat)
 			    .thenAccept(newResponse -> scheduleNextHeartbeat(nextHeartbeat, newResponse));
 			return;
@@ -138,31 +139,32 @@ public class LeaderState extends AbstractState {
 		// a response was received; update remote node log info
 		LogEntry latestEntrySent =
 		    heartbeat.logEntries.length > 0 ? heartbeat.logEntries[heartbeat.logEntries.length - 1] : null;
-		updateRemoteNodeInfo(heartbeat.remoteNode, latestEntrySent, response);
+		updateRemoteNodeInfo(heartbeat.remoteId, latestEntrySent, response);
 		checkReplication();
 
 		// schedule next heartbeat with appropriate delay; this will be an empty heartbeat
 		LogEntry[] logEntries = {};
 		Heartbeat nextHeartbeat =
-		    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteNode) - 1,
-		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteNode) - 1), logEntries,
+		    new Heartbeat(heartbeat.remoteId, heartbeat.remoteNode, HEART_BEAT_INTERVAL, nextIndex.get(heartbeat.remoteId) - 1,
+		                  node.getRaftLog().getTermOfEntry(nextIndex.get(heartbeat.remoteId) - 1), logEntries,
 		                  node.getRaftLog().getLastCommittedIndex());
-		activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
+		activeHeartbeats.put(heartbeat.remoteId, nextHeartbeat);
 		CompletableFuture.supplyAsync(nextHeartbeat)
-		    .thenAccept(newResponse -> scheduleNextHeartbeat(heartbeat, newResponse));
+		    .thenAccept(newResponse -> scheduleNextHeartbeat(nextHeartbeat, newResponse));
 	}
 
 	/**
 	 * Deactivate all scheduled heartbeats and send a more up-to-date heartbeat to remote nodes instead.
 	 */
 	private void sendEarlyHeartbeats() {
-		for (INode remoteNode : node.getRemoteNodes().values()) {
-			Heartbeat scheduled = activeHeartbeats.get(remoteNode);
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			INode remoteNode = node.getRemoteNodes().get(remoteId);
+			Heartbeat scheduled = activeHeartbeats.get(remoteId);
 			if (scheduled != null)
 				scheduled.deactivate();
 
 			// construct and send updated heartbeat
-			int prevLogIndex = nextIndex.get(remoteNode) - 1;
+			int prevLogIndex = nextIndex.get(remoteId) - 1;
 			int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
 			LogEntry[] logEntries;
 			try {
@@ -174,8 +176,8 @@ public class LeaderState extends AbstractState {
 				logEntries = new LogEntry[] {};
 			}
 			int lastCommitted = node.getRaftLog().getLastCommittedIndex();
-			Heartbeat early = new Heartbeat(remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
-			activeHeartbeats.put(remoteNode, early);
+			Heartbeat early = new Heartbeat(remoteId, remoteNode, 0, prevLogIndex, prevLogTerm, logEntries, lastCommitted);
+			activeHeartbeats.put(remoteId, early);
 			CompletableFuture.supplyAsync(early).thenAccept(response -> scheduleNextHeartbeat(early, response));
 		}
 	}
@@ -183,11 +185,11 @@ public class LeaderState extends AbstractState {
 	/**
 	 * Update the information known about a remote node's log.
 	 * This method is invoked as part of a CompletableFuture upon receiving the result of an appendEntries RMI call.
-	 * @param remoteNode      the node upon which the appendEntries RMI call was called
+	 * @param remoteId      the node upon which the appendEntries RMI call was called
 	 * @param latestEntrySent the latest entry sent to the remote node
 	 * @param response        the result of the RMI call
 	 */
-	private void updateRemoteNodeInfo(INode remoteNode, LogEntry latestEntrySent, AppendResponse response) {
+	private synchronized void updateRemoteNodeInfo(int remoteId, LogEntry latestEntrySent, AppendResponse response) {
 		if (response == null)
 			return;
 
@@ -204,14 +206,14 @@ public class LeaderState extends AbstractState {
 				return;
 
 			// non-empty heartbeat case
-			matchIndex.put(remoteNode, latestEntrySent.index);
-			nextIndex.put(remoteNode, latestEntrySent.index + 1);
+			matchIndex.put(remoteId, latestEntrySent.index);
+			nextIndex.put(remoteId, latestEntrySent.index + 1);
 			return;
 		}
 
 		// otherwise, send one more previous log next time
-		int revisedNextIndex = Integer.max(nextIndex.get(remoteNode) - 1, 0);
-		nextIndex.put(remoteNode, revisedNextIndex);
+		int revisedNextIndex = Integer.max(nextIndex.get(remoteId) - 1, 0);
+		nextIndex.put(remoteId, revisedNextIndex);
 	}
 
 	/**
@@ -242,7 +244,7 @@ public class LeaderState extends AbstractState {
 	 */
 	private boolean majorityHasLogEntry(int i) {
 		int replicatedOn = 1;
-		for (Map.Entry<INode, Integer> entry : matchIndex.entrySet())
+		for (Map.Entry<Integer, Integer> entry : matchIndex.entrySet())
 			if (entry.getValue() >= i && ++replicatedOn >= MAJORITY_THRESHOLD)
 				return true;
 		return false;
@@ -274,8 +276,9 @@ public class LeaderState extends AbstractState {
 	 * Class to schedule and provide the ability to cancel a heartbeat.
 	 */
 	private class Heartbeat implements Supplier<AppendResponse> {
+		public final int remoteId;
 		/* the remote node to which this heartbeat is related */
-		public final INode remoteNode;
+		public INode remoteNode;
 		/* time to wait before sending this heartbeat */
 		public final int delay;
 		/* flag for whether this heartbeat is active (still scheduled to be sent) */
@@ -289,8 +292,9 @@ public class LeaderState extends AbstractState {
 		public final LogEntry[] logEntries;
 		public final int lastCommitted;
 
-		private Heartbeat(INode remoteNode, int delay, int prevLogIndex, int prevLogTerm, LogEntry[] logEntries,
+		private Heartbeat(int remoteId, INode remoteNode, int delay, int prevLogIndex, int prevLogTerm, LogEntry[] logEntries,
 		                  int lastCommitted) {
+			this.remoteId = remoteId;
 			this.remoteNode = remoteNode;
 			this.delay = delay;
 			this.prevLogIndex = prevLogIndex;
@@ -315,22 +319,14 @@ public class LeaderState extends AbstractState {
 
 			} catch (RemoteException e) {
 				/* Connection lost, reconnect... */
-				int remoteId = -1;
-				for (int id : node.getRemoteNodes().keySet()) {
-					if (remoteNode == node.getRemoteNodes().get(id)) {
-						remoteId = id;
-					}
-				}
-				if (remoteId == -1) {
-					return null;
-				}
 				logger.debug("Connetion to node #" + remoteId + " is lost, retrying");
 				String remoteUrl = node.getRemoteUrl(remoteId);
 				try {
 					// Reconnect to the node and call the remote appendEntries again
 					INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
 					node.updateRemoteNode(remoteId, newRemoteNode);
-					logger.debug("Connetion to node #" + remoteId + " success");
+					this.remoteNode = newRemoteNode;
+					logger.debug("Reconnected to node #" + remoteId);
 					return newRemoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
 					                                   logEntries, lastCommitted);
 				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
@@ -358,7 +354,7 @@ public class LeaderState extends AbstractState {
 		 */
 		private void deactivate() {
 			active = false;
-			activeHeartbeats.remove(remoteNode);
+			activeHeartbeats.remove(remoteId);
 		}
 
 		/**
