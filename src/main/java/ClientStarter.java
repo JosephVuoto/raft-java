@@ -105,7 +105,7 @@ public class ClientStarter {
 					System.out.println("del <key> : delete a value from the db");
 					System.out.println("keys : list all the keys in the db");
 					System.out.println();
-					System.out.println("Example: set age 1");
+					System.out.println("Example: send set age 1 -n 1");
 				}
 
 			} catch (IOException e) {
