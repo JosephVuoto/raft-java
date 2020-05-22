@@ -100,7 +100,7 @@ public abstract class AbstractState {
 		public final int currentTerm;
 
 		public VoteResponse(boolean voteGranted, int currentTerm) {
-			System.out.println("VoteGranted: " + voteGranted);
+			logger.info("VoteGranted: " + voteGranted);
 			this.voteGranted = voteGranted;
 			this.currentTerm = currentTerm;
 		}

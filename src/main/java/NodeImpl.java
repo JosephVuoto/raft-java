@@ -33,7 +33,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	}
 
 	public void setState(AbstractState state) {
-		logger.info("node #" + nodeId + " now is in " + state.getClass().getSimpleName());
+		System.out.println();
+		logger.info("Node #" + nodeId + " now is in " + state.getClass().getSimpleName());
 		this.state = state;
 		state.start();
 	}
@@ -46,6 +47,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
 	    throws RemoteException {
+		System.out.println();
+		logger.info("###### RE FROM: " +  candidateId + " ######");
 		return state.requestVote(term, candidateId, lastLogIndex, lastLogTerm);
 	}
 
@@ -59,7 +62,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
 		AECount += 1;
 		System.out.println();
-		logger.info("###### "+ AECount + " ######");
+		logger.info("###### AE:"+ AECount + " ######");
 		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() + " Term: " + AbstractState.currentTerm);
 		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex +
 		            ", pLTerm = " + prevLogTerm + ", term = " + term);
