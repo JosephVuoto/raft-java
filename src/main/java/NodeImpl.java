@@ -3,6 +3,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.log4j.Logger;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
@@ -15,8 +17,10 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	/* log entries */
 	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
-	private Map<Integer, INode> remoteNodes;
-	private Map<Integer, String> remoteUrls;
+	private ConcurrentHashMap<Integer, INode> remoteNodes;
+	private ConcurrentHashMap<Integer, String> remoteUrls;
+
+	private static int AECount = 0;
 
 	/**
 	 * Constructor
@@ -53,16 +57,17 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
-		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
-		            ", prevLogTerm = " + prevLogTerm + ", term = " + term);
-		logger.info("Local current term: " + AbstractState.currentTerm);
-		for (LogEntry entry : entries) {
-			logger.info(entry);
-		}
-		for (LogEntry entry : entries) {
-			logger.info(entry);
-		}
+		AECount += 1;
+		System.out.println();
+		logger.info("###### "+ AECount + " ######");
+		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() + " Term: " + AbstractState.currentTerm);
+		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex +
+		            ", pLTerm = " + prevLogTerm + ", term = " + term);
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
+	}
+
+	public int getRemoteNodeId() throws RemoteException{
+		return nodeId;
 	}
 
 	public int getNodeId() {
@@ -82,15 +87,15 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 		this.raftLog = raftLog;
 	}
 
-	public Map<Integer, INode> getRemoteNodes() {
+	public ConcurrentHashMap<Integer, INode> getRemoteNodes() {
 		return remoteNodes;
 	}
 
-	public void setRemoteNodes(Map<Integer, INode> remoteNodes) {
+	public void setRemoteNodes(ConcurrentHashMap<Integer, INode> remoteNodes) {
 		this.remoteNodes = remoteNodes;
 	}
 
-	public void setRemoteUrls(Map<Integer, String> remoteUrls) {
+	public void setRemoteUrls(ConcurrentHashMap<Integer, String> remoteUrls) {
 		this.remoteUrls = remoteUrls;
 	}
 

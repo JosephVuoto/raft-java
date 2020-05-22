@@ -40,4 +40,6 @@ public interface INode extends Remote {
 	 */
 	AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                           LogEntry[] entries, int leaderCommit) throws RemoteException;
+
+	int getRemoteNodeId() throws RemoteException;
 }

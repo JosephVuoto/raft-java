@@ -17,6 +17,7 @@ public class FollowerState extends AbstractState {
 		super(node);
 		init();
 		currentLeaderId = -1;
+		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
 	}
 
 	/**
@@ -27,6 +28,7 @@ public class FollowerState extends AbstractState {
 		init();
 		this.setVoteFor(voteFor);
 		this.currentLeaderId = leaderId;
+		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
 	}
 
 	/**
@@ -45,8 +47,6 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
-		if (term > currentTerm)
-			setCurrentTerm(term);
 		// Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new VoteResponse(false, currentTerm);
@@ -76,6 +76,15 @@ public class FollowerState extends AbstractState {
 	@Override
 	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                 LogEntry[] entries, int leaderCommit) {
+		logger.info("Receive Entries:");
+		logger.info(" Size:" + entries.length);
+		logger.info(" Content: ");
+		if (entries.length == 0) {
+			logger.info("  none");
+		}
+		for (LogEntry entry : entries) {
+			logger.info("  " + entry);
+		}
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
@@ -83,11 +92,18 @@ public class FollowerState extends AbstractState {
 		// So term equal to the currentTerm also need to update the leaderId.
 		resetElectionTimer();
 		currentLeaderId = leaderId;
+		if (term != currentTerm) logger.info("Change Term: " + currentTerm  + " -> " + term);
 		setCurrentTerm(term);
 		// 2. Reply false if log doesn’t contain an entry at prevLogIndex
 		//    whose term matches prevLogTerm (§5.3)
-		if (node.getRaftLog().getTermOfEntry(prevLogIndex) != prevLogTerm)
+		int currentPrevLogIndex = node.getRaftLog().getLastEntryIndex();
+		int currentPrevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+		logger.info("Curr_PLIndex: " + currentPrevLogIndex + " prevLogIndex: " + prevLogIndex);
+		logger.info("Curr_PLTerm: " + currentPrevLogTerm + " precLogTerm: " + prevLogTerm);
+		if (currentPrevLogTerm != prevLogTerm) {
+			logger.info("AP fail");
 			return new AppendResponse(false, currentTerm);
+		}
 		// 3. If an existing entry conflicts with a new one (same index
 		//	  but different terms), delete the existing entry and all that
 		//    follow it (§5.3)
@@ -110,9 +126,10 @@ public class FollowerState extends AbstractState {
 			try {
 				node.getRaftLog().commitToIndex(commitIndex);
 			} catch (RaftLog.MissingEntriesException e) {
-				// TODO: log
+				logger.debug("AP fail: " + e);
 			}
 		}
+		logger.info("AP success");
 		return new AppendResponse(true, currentTerm);
 	}
 

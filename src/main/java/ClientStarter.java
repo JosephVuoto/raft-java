@@ -248,7 +248,7 @@ public class ClientStarter {
 	 * - A (possibly empty) payload
 	 */
 	private static class Instruction {
-		private static final int DEFAULT_TIMEOUT = 5000;
+		private static final int DEFAULT_TIMEOUT = 15000;
 
 		private enum Command {
 			/* Quit the client program */
