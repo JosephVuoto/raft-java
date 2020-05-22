@@ -124,10 +124,10 @@ public class LeaderState extends AbstractState {
 		if (node == null || !heartbeat.wasExecuted())
 			return;
 
-		// if the heartbeat was executed but a RemoteException occurred, immediately retry (same contents, no delay)
+		// if the heartbeat was executed but a RemoteException occurred, retry
 		if (response == null) {
 			Heartbeat nextHeartbeat =
-			    new Heartbeat(heartbeat.remoteNode, 0, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
+			    new Heartbeat(heartbeat.remoteNode, HEART_BEAT_INTERVAL, heartbeat.prevLogIndex, heartbeat.prevLogTerm,
 			                  heartbeat.logEntries, heartbeat.lastCommitted);
 			activeHeartbeats.put(heartbeat.remoteNode, nextHeartbeat);
 			CompletableFuture.supplyAsync(nextHeartbeat)
@@ -324,12 +324,18 @@ public class LeaderState extends AbstractState {
 				if (remoteId == -1) {
 					return null;
 				}
+				logger.debug("Connetion to node #" + remoteId + " is lost, retrying");
 				String remoteUrl = node.getRemoteUrl(remoteId);
 				try {
+					// Reconnect to the node and call the remote appendEntries again
 					INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
 					node.updateRemoteNode(remoteId, newRemoteNode);
+					logger.debug("Connetion to node #" + remoteId + " success");
+					return newRemoteNode.appendEntries(currentTerm, node.getNodeId(), prevLogIndex, prevLogTerm,
+					                                   logEntries, lastCommitted);
 				} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
 					// TODO: ignore
+					logger.debug("Retry failed");
 				}
 				return null;
 			} catch (InterruptedException e) {
