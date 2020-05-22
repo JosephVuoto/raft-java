@@ -1,12 +1,13 @@
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The state machine, which is a key-value database
  */
 public class StateMachine {
-	private Map<String, String> db = new HashMap<>();
+	private Map<String, String> db = new ConcurrentHashMap<>();
 
 	/**
 	 * set command. e.g. [set name joseph]

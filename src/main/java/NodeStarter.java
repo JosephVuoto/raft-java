@@ -5,9 +5,8 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -52,8 +51,8 @@ public class NodeStarter {
 			ExecutorService service = Executors.newFixedThreadPool(clusterInfo.size());
 			final CountDownLatch countDownLatch = new CountDownLatch(clusterInfo.size());
 			/* A map of remote nodes */
-			ConcurrentHashMap<Integer, INode> remoteNodeMap = new ConcurrentHashMap<>();
-			ConcurrentHashMap<Integer, String> remoteUrlMap = new ConcurrentHashMap<>();
+			Map<Integer, INode> remoteNodeMap = new ConcurrentHashMap<>();
+			Map<Integer, String> remoteUrlMap = new ConcurrentHashMap<>();
 
 			for (Config.NodeInfo info : clusterInfo) {
 				/* Submit a new task to the thread pool */
