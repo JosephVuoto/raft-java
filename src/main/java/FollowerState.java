@@ -5,8 +5,6 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 public class FollowerState extends AbstractState {
-	static final Logger logger = Logger.getLogger(FollowerState.class.getName());
-
 	// Use for remembering the last leader id
 	private int currentLeaderId = -1;
 	// Use for election timeout
@@ -35,6 +33,9 @@ public class FollowerState extends AbstractState {
 	 */
 	public void start() {
 		// Set the timer
+		logger = Logger.getLogger(FollowerState.class.getName());
+		logger.info("Become follower, Term: " + currentTerm + " VoteFor: " + AbstractState.votedFor +
+		            " LeaderId: " + currentLeaderId);
 		resetElectionTimer();
 	}
 
@@ -45,8 +46,9 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
-		if (term > currentTerm)
-			setCurrentTerm(term);
+		logger.info("Get voteRequest:");
+		logger.info(" Term: " + term + " |candidateId: " + candidateId + " |lastLogIndex: " + lastLogIndex);
+		logger.info(" Current Term: " + currentTerm);
 		// Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new VoteResponse(false, currentTerm);
@@ -74,8 +76,18 @@ public class FollowerState extends AbstractState {
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
 	@Override
-	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-	                                    int leaderCommit) {
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
+		if (entries.length > 0) {
+			logger.info("Receive AE:");
+			logger.info(" Size:" + entries.length);
+			logger.info(" Content: ");
+			for (LogEntry entry : entries) {
+				logger.info("  " + entry);
+			}
+		} else {
+			logger.info("Receive Heartbeat");
+		}
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new AppendResponse(false, currentTerm);
@@ -83,11 +95,19 @@ public class FollowerState extends AbstractState {
 		// So term equal to the currentTerm also need to update the leaderId.
 		resetElectionTimer();
 		currentLeaderId = leaderId;
+		if (term != currentTerm)
+			logger.info("Change Term: " + currentTerm + " -> " + term);
 		setCurrentTerm(term);
 		// 2. Reply false if log doesn’t contain an entry at prevLogIndex
 		//    whose term matches prevLogTerm (§5.3)
-		if (node.getRaftLog().getTermOfEntry(prevLogIndex) != prevLogTerm)
+		int currentPrevLogIndex = node.getRaftLog().getLastEntryIndex();
+		int currentPrevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
+		logger.info("Curr_PLIndex: " + currentPrevLogIndex + " prevLogIndex: " + prevLogIndex);
+		logger.info("Curr_PLTerm: " + currentPrevLogTerm + " precLogTerm: " + prevLogTerm);
+		if (currentPrevLogTerm != prevLogTerm) {
+			logger.info("AP fail");
 			return new AppendResponse(false, currentTerm);
+		}
 		// 3. If an existing entry conflicts with a new one (same index
 		//	  but different terms), delete the existing entry and all that
 		//    follow it (§5.3)
@@ -110,9 +130,10 @@ public class FollowerState extends AbstractState {
 			try {
 				node.getRaftLog().commitToIndex(commitIndex);
 			} catch (RaftLog.MissingEntriesException e) {
-				// TODO: log
+				logger.debug("AP fail: " + e);
 			}
 		}
+		logger.info("AP success");
 		return new AppendResponse(true, currentTerm);
 	}
 
@@ -127,7 +148,7 @@ public class FollowerState extends AbstractState {
 		try {
 			INode leader = node.getRemoteNodes().get(currentLeaderId);
 			if (leader == null) {
-				res = "No Such node with the leader ID: "+ currentLeaderId;
+				res = "No Such node with the leader ID: " + currentLeaderId;
 			} else {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}
@@ -143,25 +164,6 @@ public class FollowerState extends AbstractState {
 	private void init() {
 		// Use for election timeout
 		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-	}
-
-	/**
-	 * Ser VoteFor and store it persistently.
-	 */
-	private void setVoteFor(int votedFor) {
-		AbstractState.votedFor = votedFor;
-		writePersistentState();
-	}
-
-	/**
-	 * Ser currentTerm and store it persistently.
-	 */
-	private void setCurrentTerm(int term) {
-		if (term > currentTerm) {
-			votedFor = -1;
-			currentTerm = term;
-			writePersistentState();
-		}
 	}
 
 	/**

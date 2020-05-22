@@ -1,14 +1,20 @@
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Random;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractState {
+	/* Use for log */
+	static protected Logger logger;
 	/* time interval for the leader to send heartbeat messages */
-	protected static final int HEART_BEAT_INTERVAL = 1000;
-
+	protected static final int HEART_BEAT_INTERVAL = 500;
 	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
 	 * an upper and lower bound here  */
 	protected static final int ELECTION_TIME_OUT_MIN = 2000;
-	protected static final int ELECTION_TIME_OUT_MAX = 6000;
+	protected static final int ELECTION_TIME_OUT_MAX = 5000;
 	/* the actual election timeout */
 	protected static int electionTimeout;
 	/* latest term server has seen (initialized to 0 on first boot, increases monotonically) updated on stable storage
@@ -77,7 +83,7 @@ public abstract class AbstractState {
 	 * (Updated on stable storage before responding to RPCs)
 	 * currentTerm, votedFor, log[]
 	 */
-	protected void writePersistentState() {
+	protected synchronized void writePersistentState() {
 		PersistentState state = new PersistentState();
 		state.setVoteFor(votedFor);
 		state.setCurrentTerm(currentTerm);
@@ -93,6 +99,7 @@ public abstract class AbstractState {
 		public final int currentTerm;
 
 		public VoteResponse(boolean voteGranted, int currentTerm) {
+			logger.info("VoteGranted: " + voteGranted);
 			this.voteGranted = voteGranted;
 			this.currentTerm = currentTerm;
 		}
@@ -112,10 +119,8 @@ public abstract class AbstractState {
 
 		@Override
 		public String toString() {
-			return "AppendResponse{" +
-					"success=" + success +
-					", term=" + term +
-					'}';
+			return "AppendResponse{"
+			    + "success=" + success + ", term=" + term + '}';
 		}
 	}
 
@@ -131,5 +136,45 @@ public abstract class AbstractState {
 		votedFor = state.getVoteFor();
 		currentTerm = state.getCurrentTerm();
 		node.getRaftLog().setLogEntries(state.getLogEntries());
+	}
+
+	/**
+	 * Retry to connect to the remote node
+	 * @param remoteId the Id of the remoteNode
+	 */
+	protected boolean refindRemoteNode(int remoteId) {
+		String remoteUrl = node.getRemoteUrl(remoteId);
+		try {
+			// Reconnect to the node and call the remote appendEntries again
+			INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
+			node.updateRemoteNode(remoteId, newRemoteNode);
+			logger.debug("Reconnected to node #" + remoteId);
+		} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+			// Retry next time
+			// logger.debug(notBoundException);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Set voted for
+	 */
+	protected void setVoteFor(int newVotedFor) {
+		votedFor = newVotedFor;
+		writePersistentState();
+	}
+
+	/**
+	 * Ser currentTerm and store it persistently.
+	 *
+	 * @param term term num
+	 */
+	protected void setCurrentTerm(int term) {
+		if (term > currentTerm) {
+			votedFor = -1;
+			currentTerm = term;
+			writePersistentState();
+		}
 	}
 }

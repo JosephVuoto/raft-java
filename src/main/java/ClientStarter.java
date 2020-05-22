@@ -78,7 +78,7 @@ public class ClientStarter {
 							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
 							/* Add to the map. Next time it can get the connection from the map directly */
 							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (NotBoundException | MalformedURLException | RemoteException e) {
+						} catch (NotBoundException | MalformedURLException e) {
 							e.printStackTrace();
 							continue;
 						}
@@ -87,10 +87,25 @@ public class ClientStarter {
 					}
 					/* Invoke sendCommand */
 					// TODO: implement retry
-					String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
-					System.out.println(res);
+					try {
+						String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
+						System.out.println(res);
+					} catch (RemoteException e) {
+						System.out.println("Connection failed. Please try again");
+						remoteNodes.remove(nodeDirect);
+					}
 				} else if (instruction.command == Instruction.Command.LIST) {
-					// TODO: print a list of commands as instruction
+					System.out.println("Usage: send <command> [parameters]");
+					System.out.println();
+					System.out.println("Parameters:\n --node, -n: Node number");
+					System.out.println();
+					System.out.println("Commands:");
+					System.out.println("set <key> <value> : set a key-value pair to the db");
+					System.out.println("get <key> : get a value from the db");
+					System.out.println("del <key> : delete a value from the db");
+					System.out.println("keys : list all the keys in the db");
+					System.out.println();
+					System.out.println("Example: send set age 1 -n 1");
 				}
 
 			} catch (IOException e) {
@@ -243,7 +258,7 @@ public class ClientStarter {
 	 * - A (possibly empty) payload
 	 */
 	private static class Instruction {
-		private static final int DEFAULT_TIMEOUT = 5000;
+		private static final int DEFAULT_TIMEOUT = 15000;
 
 		private enum Command {
 			/* Quit the client program */

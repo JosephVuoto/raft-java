@@ -5,10 +5,9 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +51,8 @@ public class NodeStarter {
 			ExecutorService service = Executors.newFixedThreadPool(clusterInfo.size());
 			final CountDownLatch countDownLatch = new CountDownLatch(clusterInfo.size());
 			/* A map of remote nodes */
-			Map<Integer, INode> remoteNodeMap = new HashMap<>();
+			Map<Integer, INode> remoteNodeMap = new ConcurrentHashMap<>();
+			Map<Integer, String> remoteUrlMap = new ConcurrentHashMap<>();
 
 			for (Config.NodeInfo info : clusterInfo) {
 				/* Submit a new task to the thread pool */
@@ -69,6 +69,7 @@ public class NodeStarter {
 
 								/* Succeed, add to the list */
 								remoteNodeMap.put(info.nodeId, remoteNode);
+								remoteUrlMap.put(info.nodeId, remoteUrl);
 								logger.info("node #" + nodeId + ": Connected to node #" + info.nodeId);
 								break;
 							} catch (ConnectException | NotBoundException e) {
@@ -85,6 +86,7 @@ public class NodeStarter {
 			/* Wait until all thread are finished, so that the remoteNodeList contains all remote nodes */
 			countDownLatch.await();
 			node.setRemoteNodes(remoteNodeMap);
+			node.setRemoteUrls(remoteUrlMap);
 			/* Set path for persistent states */
 			AbstractState.setStatePersistencePath(config.statePath);
 			PersistentState state = JsonFileUtil.readPersistentState(config.statePath);

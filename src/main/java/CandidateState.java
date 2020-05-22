@@ -3,14 +3,10 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 public class CandidateState extends AbstractState {
-	static final Logger logger = Logger.getLogger(CandidateState.class.getName());
-
 	private final int MAJORITY_THRESHOLD;
 	ScheduledExecutorService scheduledExecutorService;
 	private ScheduledFuture electionScheduleFuture;
-	boolean isWaitingForVoteResponse = false;
 	protected int myVotes;
-
 
 	public CandidateState(NodeImpl node) {
 		super(node);
@@ -19,6 +15,7 @@ public class CandidateState extends AbstractState {
 	}
 
 	public void start() {
+		logger = Logger.getLogger(CandidateState.class.getName());
 		// Increment currentTerm
 		setCurrentTerm(currentTerm + 1);
 		// Vote for self
@@ -26,7 +23,6 @@ public class CandidateState extends AbstractState {
 		myVotes = 1;
 		// Reset election timer
 		resetElectionTimer();
-		isWaitingForVoteResponse = true;
 		// Send RequestVote RPCs to all other servers
 		sendRequestVote2All();
 	}
@@ -37,6 +33,9 @@ public class CandidateState extends AbstractState {
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
 	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+		logger.info("Get voteRequest:");
+		logger.info(" Term: " + term + " |candidateId: " + candidateId + " |lastLogIndex: " + lastLogIndex);
+		logger.info(" Current Term: " + currentTerm);
 		// Reply false if term < currentTerm (§5.1)
 		if (term > currentTerm) {
 			setCurrentTerm(term);
@@ -51,8 +50,8 @@ public class CandidateState extends AbstractState {
 	 *
 	 * @see AbstractState#appendEntries(int, int, int, int, LogEntry[], int)
 	 */
-	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm, LogEntry[] entries,
-										int leaderCommit){
+	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
+	                                                 LogEntry[] entries, int leaderCommit) {
 		// Much of the thing is like the Follower
 		// One different: If Append Entries received from new leader: convert to follower
 		// 1. Reply false if term < currentTerm (§5.1)
@@ -60,38 +59,37 @@ public class CandidateState extends AbstractState {
 			return new AppendResponse(false, currentTerm);
 		// If Append Entries received from new leader: convert to follower
 		// Need to finish all the jobs before going back to a follower
-		electionScheduleFuture.cancel(true);
 		setCurrentTerm(term);
-		return becomeFollower(-1, leaderId).appendEntries(term, leaderId,
-				prevLogIndex, prevLogTerm, entries, leaderCommit);
+		return becomeFollower(-1, leaderId)
+		    .appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
 	private void sendRequestVote2All() {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (INode remoteNode : node.getRemoteNodes().values()) {
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			if (remoteId == node.getNodeId())
+				continue;
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {
-					    // sleep until the election time is scheduled to be sent
-					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
+					    return node.getRemoteNodes().get(remoteId).requestVote(currentTerm, myID, myLastLogIndex,
+					                                                           myLastLogTerm);
 				    } catch (RemoteException e) {
+					    logger.debug("Can not connect to remoteNode " + remoteId);
+					    refindRemoteNode(remoteId);
 					    return null;
-					    // TODO
 				    }
 			    })
 			    .thenAccept(this::handleVoteRes);
 		}
 	}
 
-	private void handleVoteRes(VoteResponse voteResponse) {
+	private synchronized void handleVoteRes(VoteResponse voteResponse) {
 		// stop if no longer candidate
-		if (node == null)
+		if (node == null || voteResponse == null)
 			return;
-		if (voteResponse == null) {
-			// TODO
-		}
 		if (voteResponse.voteGranted) {
 			myVotes += 1;
 			if (myVotes >= MAJORITY_THRESHOLD) {
@@ -104,6 +102,7 @@ public class CandidateState extends AbstractState {
 	 * Change to follower
 	 */
 	private FollowerState becomeFollower(int voteFor, int leaderId) {
+		electionScheduleFuture.cancel(true);
 		FollowerState followerState = new FollowerState(node, voteFor, leaderId);
 		node.setState(followerState);
 		this.node = null;
@@ -114,6 +113,7 @@ public class CandidateState extends AbstractState {
 	 * Change to leader
 	 */
 	private void becomeLeader() {
+		electionScheduleFuture.cancel(true);
 		node.setState(new LeaderState(node));
 		this.node = null;
 	}
@@ -134,26 +134,5 @@ public class CandidateState extends AbstractState {
 			node.setState(new CandidateState(node));
 			node = null;
 		}, electionTimeout, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Set voted for
-	 */
-	private void setVoteFor(int newVotedFor) {
-		votedFor = newVotedFor;
-		writePersistentState();
-	}
-
-	/**
-	 * Ser currentTerm and store it persistently.
-	 *
-	 * @param term term num
-	 */
-	private void setCurrentTerm(int term) {
-		if (term > currentTerm) {
-			votedFor = -1;
-			currentTerm = term;
-			writePersistentState();
-		}
 	}
 }

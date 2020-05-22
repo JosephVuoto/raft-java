@@ -38,7 +38,8 @@ public class RaftLog {
 	 */
 	public int getTermOfEntry(int entryIndex) {
 		try {
-			return logEntries.get(entryIndex).term;
+			// entryIndex start from 1!!!
+			return logEntries.get(entryIndex - 1).term;
 		} catch (IndexOutOfBoundsException e) {
 			return 0;
 		}
@@ -53,7 +54,8 @@ public class RaftLog {
 	 */
 	public void writeEntries(int fromIndex, List<LogEntry> entries)
 	    throws MissingEntriesException, OverwriteCommittedEntryException {
-		//		logger.info("writeEntries invoked: fromIndex = " + fromIndex);
+		logger.info("Write at " + fromIndex);
+		logger.info("Add Entries: " + entries);
 		// ensure the log is continuous
 		if (fromIndex > getLastEntryIndex() + 1)
 			throw new MissingEntriesException(fromIndex, getLastEntryIndex());
@@ -66,6 +68,10 @@ public class RaftLog {
 
 		// append new entries
 		logEntries.addAll(entries);
+		logger.info("All Entries: ");
+		for (LogEntry entrie : logEntries) {
+			logger.info(" " + entrie);
+		}
 	}
 
 	public synchronized LogEntry addNewEntry(int term, String command) {
@@ -149,8 +155,18 @@ public class RaftLog {
 		return logEntries;
 	}
 
+	/* Recover the log after crash */
 	public void setLogEntries(List<LogEntry> logEntries) {
 		this.logEntries = logEntries;
+		/* Apply committed entries to the state machine */
+		for (LogEntry entry : logEntries) {
+			if (entry.isCommitted()) {
+				lastCommitted = entry;
+				applyLog(entry);
+			} else {
+				break;
+			}
+		}
 	}
 
 	public StateMachine getStateMachine() {

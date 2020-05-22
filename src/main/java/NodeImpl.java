@@ -3,6 +3,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
@@ -16,6 +17,9 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	private RaftLog raftLog = new RaftLog();
 	/* list of remote nodes in the cluster */
 	private Map<Integer, INode> remoteNodes;
+	private Map<Integer, String> remoteUrls;
+
+	private static int AECount = 0;
 
 	/**
 	 * Constructor
@@ -28,7 +32,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	}
 
 	public void setState(AbstractState state) {
-		logger.info("node #" + nodeId + " now is in " + state.getClass().getSimpleName());
+		System.out.println();
+		logger.info("Node #" + nodeId + " now is in " + state.getClass().getSimpleName());
 		this.state = state;
 		state.start();
 	}
@@ -41,6 +46,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
 	    throws RemoteException {
+		System.out.println();
+		logger.info("###### RE FROM: " + candidateId + " ######");
 		return state.requestVote(term, candidateId, lastLogIndex, lastLogTerm);
 	}
 
@@ -52,15 +59,16 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	@Override
 	public AbstractState.AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
-		//		logger.info("Node #" + nodeId + " received appendEntries RPC: prevLogIndex = " + prevLogIndex +
-		//		            ", prevLogTerm = " + prevLogTerm);
-		for (LogEntry entry : entries) {
-			logger.info(entry);
-		}
+		AECount += 1;
+		System.out.println();
+		logger.info("###### AE:" + AECount + " ######");
+		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() +
+		            " Term: " + AbstractState.currentTerm);
+		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex + ", pLTerm = " + prevLogTerm +
+		            ", term = " + term);
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 
-	@Override
 	public int getNodeId() {
 		return nodeId;
 	}
@@ -84,6 +92,18 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 
 	public void setRemoteNodes(Map<Integer, INode> remoteNodes) {
 		this.remoteNodes = remoteNodes;
+	}
+
+	public void setRemoteUrls(Map<Integer, String> remoteUrls) {
+		this.remoteUrls = remoteUrls;
+	}
+
+	public void updateRemoteNode(int id, INode node) {
+		remoteNodes.put(id, node);
+	}
+
+	public String getRemoteUrl(int id) {
+		return remoteUrls.get(id);
 	}
 
 	/**
