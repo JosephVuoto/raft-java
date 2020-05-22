@@ -270,8 +270,12 @@ public class LeaderState extends AbstractState {
 	 * @param exitVote        the candidate granted a vote by this node
 	 */
 	private void resign(int supersedingTerm, int exitVote) {
-		resign(supersedingTerm);
 		votedFor = exitVote;
+		node.setState(new FollowerState(node, votedFor, -1));
+		currentTerm = supersedingTerm;
+		writePersistentState();
+		// indicate no longer being leader; this reference is checked before scheduling the next heartbeat
+		node = null;
 	}
 
 	/**
