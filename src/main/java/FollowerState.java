@@ -34,7 +34,8 @@ public class FollowerState extends AbstractState {
 	public void start() {
 		// Set the timer
 		logger = Logger.getLogger(FollowerState.class.getName());
-		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
+		logger.info("Become follower, Term: " + currentTerm + " VoteFor: " + AbstractState.votedFor +
+		            " LeaderId: " + currentLeaderId);
 		resetElectionTimer();
 	}
 
@@ -94,7 +95,8 @@ public class FollowerState extends AbstractState {
 		// So term equal to the currentTerm also need to update the leaderId.
 		resetElectionTimer();
 		currentLeaderId = leaderId;
-		if (term != currentTerm) logger.info("Change Term: " + currentTerm  + " -> " + term);
+		if (term != currentTerm)
+			logger.info("Change Term: " + currentTerm + " -> " + term);
 		setCurrentTerm(term);
 		// 2. Reply false if log doesn’t contain an entry at prevLogIndex
 		//    whose term matches prevLogTerm (§5.3)

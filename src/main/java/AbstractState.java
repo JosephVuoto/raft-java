@@ -1,21 +1,20 @@
-import org.apache.log4j.Logger;
-
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.Random;
+import org.apache.log4j.Logger;
 
 public abstract class AbstractState {
 	/* Use for log */
 	static protected Logger logger;
 	/* time interval for the leader to send heartbeat messages */
-	protected static final int HEART_BEAT_INTERVAL = 5000;
+	protected static final int HEART_BEAT_INTERVAL = 500;
 	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
 	 * an upper and lower bound here  */
-	protected static final int ELECTION_TIME_OUT_MIN = 10000;
-	protected static final int ELECTION_TIME_OUT_MAX = 15000;
+	protected static final int ELECTION_TIME_OUT_MIN = 2000;
+	protected static final int ELECTION_TIME_OUT_MAX = 5000;
 	/* the actual election timeout */
 	protected static int electionTimeout;
 	/* latest term server has seen (initialized to 0 on first boot, increases monotonically) updated on stable storage
@@ -147,7 +146,7 @@ public abstract class AbstractState {
 		String remoteUrl = node.getRemoteUrl(remoteId);
 		try {
 			// Reconnect to the node and call the remote appendEntries again
-			INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
+			INode newRemoteNode = (INode)Naming.lookup(remoteUrl);
 			node.updateRemoteNode(remoteId, newRemoteNode);
 			logger.debug("Reconnected to node #" + remoteId);
 		} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {

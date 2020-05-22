@@ -1,2 +1,2 @@
 rm *.json
-mvn package
+mvn install

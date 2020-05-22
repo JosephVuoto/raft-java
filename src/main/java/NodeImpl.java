@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.log4j.Logger;
 
 public class NodeImpl extends UnicastRemoteObject implements INode, IClientInterface {
@@ -48,7 +47,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	public AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
 	    throws RemoteException {
 		System.out.println();
-		logger.info("###### RE FROM: " +  candidateId + " ######");
+		logger.info("###### RE FROM: " + candidateId + " ######");
 		return state.requestVote(term, candidateId, lastLogIndex, lastLogTerm);
 	}
 
@@ -62,10 +61,11 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
 		AECount += 1;
 		System.out.println();
-		logger.info("###### AE:"+ AECount + " ######");
-		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() + " Term: " + AbstractState.currentTerm);
-		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex +
-		            ", pLTerm = " + prevLogTerm + ", term = " + term);
+		logger.info("###### AE:" + AECount + " ######");
+		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() +
+		            " Term: " + AbstractState.currentTerm);
+		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex + ", pLTerm = " + prevLogTerm +
+		            ", term = " + term);
 		return state.appendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit);
 	}
 

@@ -69,14 +69,16 @@ public class CandidateState extends AbstractState {
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
 		for (int remoteId : node.getRemoteNodes().keySet()) {
-			if (remoteId == node.getNodeId()) continue;
+			if (remoteId == node.getNodeId())
+				continue;
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {
-					    return node.getRemoteNodes().get(remoteId).requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
+					    return node.getRemoteNodes().get(remoteId).requestVote(currentTerm, myID, myLastLogIndex,
+					                                                           myLastLogTerm);
 				    } catch (RemoteException e) {
-						logger.debug("Can not connect to remoteNode " + remoteId);
-						refindRemoteNode(remoteId);
+					    logger.debug("Can not connect to remoteNode " + remoteId);
+					    refindRemoteNode(remoteId);
 					    return null;
 				    }
 			    })
