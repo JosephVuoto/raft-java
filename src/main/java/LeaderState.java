@@ -10,19 +10,17 @@ import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
 public class LeaderState extends AbstractState {
-	static final Logger logger = Logger.getLogger(LeaderState.class.getName());
-
 	private final int MAJORITY_THRESHOLD;
 	/* a map that stores for each server, index of the next log entry to send to that server (initialized to leader last
 	 * log index + 1). The data structure is <node id, index of the next log entry>. Reinitialized after election */
-	private final ConcurrentHashMap<INode, Integer> nextIndex;
+	private final ConcurrentHashMap<Integer, Integer> nextIndex;
 	/* for each server, index of highest log entry known to be replicated on server (initialized to 0, increases
 	 * monotonically). The data structure is <node id, index of highest log entry...>. Reinitialized after election */
-	private final ConcurrentHashMap<INode, Integer> matchIndex;
+	private final ConcurrentHashMap<Integer, Integer> matchIndex;
 	/* Use for periodical heartbeat */
-	private ScheduledExecutorService scheduledExecutorService;
+	private final ScheduledExecutorService scheduledExecutorService;
 	private ScheduledFuture heartbeatScheduledFuture;
-	private ExecutorService executorService;
+	private final ExecutorService executorService;
 
 	private static final int POLL_INTERVAL = 50;
 
@@ -47,10 +45,11 @@ public class LeaderState extends AbstractState {
 	 * Initialize attributes and setup a timer to send heartbeat message regularly
 	 */
 	public void start() {
+		logger = Logger.getLogger(LeaderState.class.getName());
 		// initialise nextIndex and matchIndex with default initial values
-		for (INode remoteNode : node.getRemoteNodes().values()) {
-			nextIndex.put(remoteNode, node.getRaftLog().getLastEntryIndex() + 1);
-			matchIndex.put(remoteNode, 0);
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			nextIndex.put(remoteId, node.getRaftLog().getLastEntryIndex() + 1);
+			matchIndex.put(remoteId, 0);
 		}
         startNewHeartbeat();
 	}
@@ -158,27 +157,6 @@ public class LeaderState extends AbstractState {
 	}
 
 	/**
-	 * Set voted for
-	 */
-	private void setVoteFor(int newVotedFor) {
-		votedFor = newVotedFor;
-		writePersistentState();
-	}
-
-	/**
-	 * Ser currentTerm and store it persistently.
-	 *
-	 * @param term term num
-	 */
-	private void setCurrentTerm(int term) {
-		if (term > currentTerm) {
-			votedFor = -1;
-			currentTerm = term;
-			writePersistentState();
-		}
-	}
-
-	/**
 	 * heartbeat timer, append entries
 	 */
 	private void resetHeartbeatTimer() {
@@ -192,8 +170,9 @@ public class LeaderState extends AbstractState {
      * start new heartbeat
      */
     private void startNewHeartbeat() {
-        for (INode remoteNode : node.getRemoteNodes().values()) {
-            executorService.submit(() -> sendAppendEntries(remoteNode));
+        for (int remoteId : node.getRemoteNodes().keySet()) {
+        	if (remoteId == node.getNodeId()) continue;
+            executorService.submit(() -> sendAppendEntries(remoteId));
         }
         resetHeartbeatTimer();
     }
@@ -201,9 +180,9 @@ public class LeaderState extends AbstractState {
     /**
      * Use the same method to send both heartbeat and appendEntries
      */
-    private void sendAppendEntries(INode remoteNode) {
+    private void sendAppendEntries(int remoteId) {
         // construct and send updated heartbeat
-        int prevLogIndex = nextIndex.get(remoteNode) - 1;
+        int prevLogIndex = nextIndex.get(remoteId) - 1;
         int prevLogTerm = node.getRaftLog().getTermOfEntry(prevLogIndex);
         LogEntry[] logEntries;
         try {
@@ -217,29 +196,30 @@ public class LeaderState extends AbstractState {
         }
         int lastCommitted = node.getRaftLog().getLastCommittedIndex();
         try {
-        	logger.info("Send AE to Node ID: " + remoteNode.getRemoteNodeId());
-        	logger.info(" Term: " + currentTerm + " PLIndex: " + prevLogIndex + " PLTerm: " + prevLogTerm + " lastCommitted: " + lastCommitted);
-        	logger.info(" logEntries size: " + logEntries.length);
-            AppendResponse appendResponse = remoteNode.appendEntries(currentTerm, node.getNodeId(),
+        	if (logEntries.length > 0) {
+				logger.info("Send AE to Node ID: " + remoteId + " |logEntries size: " + logEntries.length + " |Term: "
+						+ currentTerm + " |PLIndex: " + prevLogIndex + " |PLTerm: " + prevLogTerm + " |lastCommitted: " + lastCommitted);
+			}
+            AppendResponse appendResponse = node.getRemoteNodes().get(remoteId).appendEntries(currentTerm, node.getNodeId(),
                     prevLogIndex, prevLogTerm, logEntries, lastCommitted);
             // a response was received; update remote node log info
             LogEntry latestEntrySent = logEntries.length > 0 ? logEntries[logEntries.length - 1] : null;
-            updateRemoteNodeInfo(remoteNode, latestEntrySent, appendResponse);
+            updateRemoteNodeInfo(remoteId, latestEntrySent, appendResponse);
 			checkReplication();
         } catch (RemoteException e) {
-            logger.debug("Can not connect to remoteNode");
-            // Do nothing and try again
+            logger.debug("Can not connect to remoteNode " + remoteId);
+			refindRemoteNode(remoteId);
         }
     }
 
     /**
      * Update the information known about a remote node's log.
      * This method is invoked as part of a CompletableFuture upon receiving the result of an appendEntries RMI call.
-     * @param remoteNode      the node upon which the appendEntries RMI call was called
+     * @param remoteId      the node upon which the appendEntries RMI call was called
      * @param latestEntrySent the latest entry sent to the remote node
      * @param response        the result of the RMI call
      */
-    private synchronized void updateRemoteNodeInfo(INode remoteNode, LogEntry latestEntrySent, AppendResponse response) {
+    private synchronized void updateRemoteNodeInfo(int remoteId, LogEntry latestEntrySent, AppendResponse response) {
         // Need to check again. If not synchronize, can't update some node's next index. by Aaron
         if (response == null)
             return;
@@ -254,15 +234,14 @@ public class LeaderState extends AbstractState {
             if (latestEntrySent == null)
                 return;
             // non-empty heartbeat case
-            matchIndex.put(remoteNode, latestEntrySent.index);
-            nextIndex.put(remoteNode, latestEntrySent.index + 1);
+            matchIndex.put(remoteId, latestEntrySent.index);
+            nextIndex.put(remoteId, latestEntrySent.index + 1);
             return;
         }
         // otherwise, send one more previous log next time
-        int revisedNextIndex = Integer.max(nextIndex.get(remoteNode) - 1, 0);
-        nextIndex.put(remoteNode, revisedNextIndex);
+        int revisedNextIndex = Integer.max(nextIndex.get(remoteId) - 1, 0);
+        nextIndex.put(remoteId, revisedNextIndex);
     }
-
     //TODO: If commitIndex > lastApplied: increment lastApplied, apply log[lastApplied] to state machine.
 
 }

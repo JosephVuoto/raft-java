@@ -3,8 +3,6 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 public class CandidateState extends AbstractState {
-	static final Logger logger = Logger.getLogger(CandidateState.class.getName());
-
 	private final int MAJORITY_THRESHOLD;
 	ScheduledExecutorService scheduledExecutorService;
 	private ScheduledFuture electionScheduleFuture;
@@ -17,6 +15,7 @@ public class CandidateState extends AbstractState {
 	}
 
 	public void start() {
+		logger = Logger.getLogger(CandidateState.class.getName());
 		// Increment currentTerm
 		setCurrentTerm(currentTerm + 1);
 		// Vote for self
@@ -34,6 +33,9 @@ public class CandidateState extends AbstractState {
 	 * @see AbstractState#requestVote(int, int, int, int)
 	 */
 	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+		logger.info("Get voteRequest:");
+		logger.info(" Term: " + term + " |candidateId: " + candidateId + " |lastLogIndex: " + lastLogIndex);
+		logger.info(" Current Term: " + currentTerm);
 		// Reply false if term < currentTerm (§5.1)
 		if (term > currentTerm) {
 			setCurrentTerm(term);
@@ -66,12 +68,15 @@ public class CandidateState extends AbstractState {
 		int myLastLogIndex = this.node.getRaftLog().getLastEntryIndex();
 		int myLastLogTerm = this.node.getRaftLog().getTermOfEntry(myLastLogIndex);
 		int myID = node.getNodeId();
-		for (INode remoteNode : node.getRemoteNodes().values()) {
+		for (int remoteId : node.getRemoteNodes().keySet()) {
+			if (remoteId == node.getNodeId()) continue;
 			CompletableFuture
 			    .supplyAsync(() -> {
 				    try {
-					    return remoteNode.requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
+					    return node.getRemoteNodes().get(remoteId).requestVote(currentTerm, myID, myLastLogIndex, myLastLogTerm);
 				    } catch (RemoteException e) {
+						logger.debug("Can not connect to remoteNode " + remoteId);
+						refindRemoteNode(remoteId);
 					    return null;
 				    }
 			    })
@@ -83,7 +88,6 @@ public class CandidateState extends AbstractState {
 		// stop if no longer candidate
 		if (node == null || voteResponse == null)
 			return;
-
 		if (voteResponse.voteGranted) {
 			myVotes += 1;
 			if (myVotes >= MAJORITY_THRESHOLD) {
@@ -128,26 +132,5 @@ public class CandidateState extends AbstractState {
 			node.setState(new CandidateState(node));
 			node = null;
 		}, electionTimeout, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Set voted for
-	 */
-	private void setVoteFor(int newVotedFor) {
-		votedFor = newVotedFor;
-		writePersistentState();
-	}
-
-	/**
-	 * Ser currentTerm and store it persistently.
-	 *
-	 * @param term term num
-	 */
-	private void setCurrentTerm(int term) {
-		if (term > currentTerm) {
-			votedFor = -1;
-			currentTerm = term;
-			writePersistentState();
-		}
 	}
 }

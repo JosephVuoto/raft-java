@@ -5,8 +5,6 @@ import java.util.concurrent.*;
 import org.apache.log4j.Logger;
 
 public class FollowerState extends AbstractState {
-	static final Logger logger = Logger.getLogger(FollowerState.class.getName());
-
 	// Use for remembering the last leader id
 	private int currentLeaderId = -1;
 	// Use for election timeout
@@ -17,7 +15,6 @@ public class FollowerState extends AbstractState {
 		super(node);
 		init();
 		currentLeaderId = -1;
-		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
 	}
 
 	/**
@@ -28,7 +25,6 @@ public class FollowerState extends AbstractState {
 		init();
 		this.setVoteFor(voteFor);
 		this.currentLeaderId = leaderId;
-		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
 	}
 
 	/**
@@ -37,6 +33,8 @@ public class FollowerState extends AbstractState {
 	 */
 	public void start() {
 		// Set the timer
+		logger = Logger.getLogger(FollowerState.class.getName());
+		logger.info("Become follower, Term: "+ currentTerm + " VoteFor: " + AbstractState.votedFor + " LeaderId: " + currentLeaderId);
 		resetElectionTimer();
 	}
 
@@ -47,6 +45,9 @@ public class FollowerState extends AbstractState {
 	 */
 	@Override
 	public synchronized VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
+		logger.info("Get voteRequest:");
+		logger.info(" Term: " + term + " |candidateId: " + candidateId + " |lastLogIndex: " + lastLogIndex);
+		logger.info(" Current Term: " + currentTerm);
 		// Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
 			return new VoteResponse(false, currentTerm);
@@ -76,14 +77,15 @@ public class FollowerState extends AbstractState {
 	@Override
 	public synchronized AppendResponse appendEntries(int term, int leaderId, int prevLogIndex, int prevLogTerm,
 	                                                 LogEntry[] entries, int leaderCommit) {
-		logger.info("Receive Entries:");
-		logger.info(" Size:" + entries.length);
-		logger.info(" Content: ");
-		if (entries.length == 0) {
-			logger.info("  none");
-		}
-		for (LogEntry entry : entries) {
-			logger.info("  " + entry);
+		if (entries.length > 0) {
+			logger.info("Receive AE:");
+			logger.info(" Size:" + entries.length);
+			logger.info(" Content: ");
+			for (LogEntry entry : entries) {
+				logger.info("  " + entry);
+			}
+		} else {
+			logger.info("Receive Heartbeat");
 		}
 		// 1. Reply false if term < currentTerm (§5.1)
 		if (term < currentTerm)
@@ -160,25 +162,6 @@ public class FollowerState extends AbstractState {
 	private void init() {
 		// Use for election timeout
 		scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-	}
-
-	/**
-	 * Ser VoteFor and store it persistently.
-	 */
-	private void setVoteFor(int votedFor) {
-		AbstractState.votedFor = votedFor;
-		writePersistentState();
-	}
-
-	/**
-	 * Ser currentTerm and store it persistently.
-	 */
-	private void setCurrentTerm(int term) {
-		if (term > currentTerm) {
-			votedFor = -1;
-			currentTerm = term;
-			writePersistentState();
-		}
 	}
 
 	/**

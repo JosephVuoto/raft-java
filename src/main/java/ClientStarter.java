@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -79,14 +78,15 @@ public class ClientStarter {
 							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
 							/* Add to the map. Next time it can get the connection from the map directly */
 							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (ConnectException | NotBoundException | MalformedURLException e) {
-							System.out.println("Connection failed. Please try other nodes");
+						} catch (NotBoundException | MalformedURLException e) {
+							e.printStackTrace();
 							continue;
 						}
 					} else {
 						remoteNode = remoteNodes.get(nodeDirect);
 					}
 					/* Invoke sendCommand */
+					// TODO: implement retry
 					try {
 						String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
 						System.out.println(res);
@@ -96,17 +96,6 @@ public class ClientStarter {
 					}
 				} else if (instruction.command == Instruction.Command.LIST) {
 					// TODO: print a list of commands as instruction
-					System.out.println("Usage: send <command> [parameters]");
-					System.out.println();
-					System.out.println("Parameters:\n --node, -n: Node number");
-					System.out.println();
-					System.out.println("Commands:");
-					System.out.println("set <key> <value> : set a key-value pair to the db");
-					System.out.println("get <key> : get a value from the db");
-					System.out.println("del <key> : delete a value from the db");
-					System.out.println("keys : list all the keys in the db");
-					System.out.println();
-					System.out.println("Example: set age 1");
 				}
 
 			} catch (IOException e) {

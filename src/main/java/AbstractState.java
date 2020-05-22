@@ -1,10 +1,17 @@
+import org.apache.log4j.Logger;
+
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Random;
 
 public abstract class AbstractState {
+	/* Use for log */
+	static protected Logger logger;
 	/* time interval for the leader to send heartbeat messages */
 	protected static final int HEART_BEAT_INTERVAL = 5000;
-
 	/* timeout for the follower to start a new election; this timeout should be random to prevent live lock. we define
 	 * an upper and lower bound here  */
 	protected static final int ELECTION_TIME_OUT_MIN = 10000;
@@ -93,6 +100,7 @@ public abstract class AbstractState {
 		public final int currentTerm;
 
 		public VoteResponse(boolean voteGranted, int currentTerm) {
+			System.out.println("VoteGranted: " + voteGranted);
 			this.voteGranted = voteGranted;
 			this.currentTerm = currentTerm;
 		}
@@ -129,5 +137,45 @@ public abstract class AbstractState {
 		votedFor = state.getVoteFor();
 		currentTerm = state.getCurrentTerm();
 		node.getRaftLog().setLogEntries(state.getLogEntries());
+	}
+
+	/**
+	 * Retry to connect to the remote node
+	 * @param remoteId the Id of the remoteNode
+	 */
+	protected boolean refindRemoteNode(int remoteId) {
+		String remoteUrl = node.getRemoteUrl(remoteId);
+		try {
+			// Reconnect to the node and call the remote appendEntries again
+			INode newRemoteNode = (INode) Naming.lookup(remoteUrl);
+			node.updateRemoteNode(remoteId, newRemoteNode);
+			logger.debug("Reconnected to node #" + remoteId);
+		} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
+			// Retry next time
+			// logger.debug(notBoundException);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Set voted for
+	 */
+	protected void setVoteFor(int newVotedFor) {
+		votedFor = newVotedFor;
+		writePersistentState();
+	}
+
+	/**
+	 * Ser currentTerm and store it persistently.
+	 *
+	 * @param term term num
+	 */
+	protected void setCurrentTerm(int term) {
+		if (term > currentTerm) {
+			votedFor = -1;
+			currentTerm = term;
+			writePersistentState();
+		}
 	}
 }
