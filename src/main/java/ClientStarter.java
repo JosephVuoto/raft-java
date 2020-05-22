@@ -95,7 +95,17 @@ public class ClientStarter {
 						remoteNodes.remove(nodeDirect);
 					}
 				} else if (instruction.command == Instruction.Command.LIST) {
-					// TODO: print a list of commands as instruction
+					System.out.println("Usage: send <command> [parameters]");
+					System.out.println();
+					System.out.println("Parameters:\n --node, -n: Node number");
+					System.out.println();
+					System.out.println("Commands:");
+					System.out.println("set <key> <value> : set a key-value pair to the db");
+					System.out.println("get <key> : get a value from the db");
+					System.out.println("del <key> : delete a value from the db");
+					System.out.println("keys : list all the keys in the db");
+					System.out.println();
+					System.out.println("Example: set age 1");
 				}
 
 			} catch (IOException e) {
