@@ -142,7 +142,7 @@ public abstract class AbstractState {
 	 * Retry to connect to the remote node
 	 * @param remoteId the Id of the remoteNode
 	 */
-	protected boolean refindRemoteNode(int remoteId) {
+	protected void reconnectToRemoteNode(int remoteId) {
 		String remoteUrl = node.getRemoteUrl(remoteId);
 		try {
 			// Reconnect to the node and call the remote appendEntries again
@@ -152,9 +152,7 @@ public abstract class AbstractState {
 		} catch (NotBoundException | MalformedURLException | RemoteException notBoundException) {
 			// Retry next time
 			// logger.debug(notBoundException);
-			return false;
 		}
-		return true;
 	}
 
 	/**

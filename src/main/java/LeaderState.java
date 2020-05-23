@@ -1,12 +1,5 @@
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 import org.apache.log4j.Logger;
 
 public class LeaderState extends AbstractState {
@@ -207,7 +200,7 @@ public class LeaderState extends AbstractState {
 			checkReplication();
 		} catch (RemoteException e) {
 			logger.debug("Can not connect to remoteNode " + remoteId);
-			refindRemoteNode(remoteId);
+			reconnectToRemoteNode(remoteId);
 		}
 	}
 

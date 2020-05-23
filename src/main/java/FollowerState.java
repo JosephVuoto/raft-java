@@ -153,7 +153,10 @@ public class FollowerState extends AbstractState {
 				res = ((IClientInterface)leader).sendCommand(command, timeout);
 			}
 		} catch (RemoteException e) {
-			res = "Cannot reach the remote node: " + e;
+			if (currentLeaderId != -1) {
+				reconnectToRemoteNode(currentLeaderId);
+			}
+			res = "Cannot reach the remote node, please try again later";
 		}
 		return res;
 	}

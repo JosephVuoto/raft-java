@@ -78,7 +78,7 @@ public class CandidateState extends AbstractState {
 					                                                           myLastLogTerm);
 				    } catch (RemoteException e) {
 					    logger.debug("Can not connect to remoteNode " + remoteId);
-					    refindRemoteNode(remoteId);
+					    reconnectToRemoteNode(remoteId);
 					    return null;
 				    }
 			    })
