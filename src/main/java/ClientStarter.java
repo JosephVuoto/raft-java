@@ -30,6 +30,11 @@ public class ClientStarter {
 		Config config = JsonFileUtil.readConfig(configPath);
 		List<Config.NodeInfo> clusterInfo = config.clusterInfo;
 
+		System.out.println("Nodes in the cluster:");
+		for (Config.NodeInfo info : clusterInfo) {
+			System.out.println("#" + info.nodeId + ": " + info.address + ":" + info.port);
+		}
+
 		/* A map of remote nodes: <node id, IClientInterface instance> */
 		Map<Integer, IClientInterface> remoteNodes = new HashMap<>();
 
