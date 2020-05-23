@@ -83,8 +83,8 @@ public class ClientStarter {
 							remoteNode = (IClientInterface)Naming.lookup(remoteUrl);
 							/* Add to the map. Next time it can get the connection from the map directly */
 							remoteNodes.put(info.nodeId, remoteNode);
-						} catch (NotBoundException | MalformedURLException e) {
-							e.printStackTrace();
+						} catch (NotBoundException | MalformedURLException | RemoteException e) {
+							System.err.println("Cannot access the target node, please try other nodes");
 							continue;
 						}
 					} else {
@@ -96,7 +96,7 @@ public class ClientStarter {
 						String res = remoteNode.sendCommand(instruction.payload, Instruction.DEFAULT_TIMEOUT);
 						System.out.println(res);
 					} catch (RemoteException e) {
-						System.out.println("Connection failed. Please try again");
+						System.err.println("Connection failed. Please try again");
 						remoteNodes.remove(nodeDirect);
 					}
 				} else if (instruction.command == Instruction.Command.LIST) {
