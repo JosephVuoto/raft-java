@@ -47,7 +47,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	public AbstractState.VoteResponse requestVote(int term, int candidateId, int lastLogIndex, int lastLogTerm)
 	    throws RemoteException {
 		System.out.println();
-		logger.info("###### RE FROM: " + candidateId + " ######");
+		logger.info("###### Vote Request FROM: " + candidateId + " ######");
 		return state.requestVote(term, candidateId, lastLogIndex, lastLogTerm);
 	}
 
@@ -61,7 +61,7 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 	                                                  LogEntry[] entries, int leaderCommit) throws RemoteException {
 		AECount += 1;
 		System.out.println();
-		logger.info("###### AE:" + AECount + " ######");
+		logger.info("###### AppendEntries:" + AECount + " ######");
 		logger.info("Node ID: " + nodeId + " State: " + state.getClass().getSimpleName() +
 		            " Term: " + AbstractState.currentTerm);
 		logger.info("AE: FromLeaderID: " + leaderId + " pLIndex = " + prevLogIndex + ", pLTerm = " + prevLogTerm +
@@ -122,7 +122,8 @@ public class NodeImpl extends UnicastRemoteObject implements INode, IClientInter
 			if (commandArgs.length != 2) {
 				return "Invalid command";
 			} else {
-				return raftLog.getStateMachine().get(commandArgs[1]);
+				return state.handleCommand(command, timeout);
+				//				return raftLog.getStateMachine().get(commandArgs[1]);
 			}
 		} else if ("set".equals(commandArgs[0])) {
 			if (commandArgs.length != 3) {

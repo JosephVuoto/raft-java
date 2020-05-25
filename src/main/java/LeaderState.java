@@ -82,6 +82,10 @@ public class LeaderState extends AbstractState {
 
 	@Override
 	public String handleCommand(String command, int timeout) {
+		String[] commandArgs = command.split("\\s+");
+		if ("get".equals(commandArgs[0])) {
+			return node.getRaftLog().getStateMachine().get(commandArgs[1]);
+		}
 		LogEntry entry = node.getRaftLog().addNewEntry(currentTerm, command);
 		writePersistentState();
 		for (int t = 0; t < timeout; t += POLL_INTERVAL) {
