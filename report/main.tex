@@ -615,11 +615,17 @@ greatest and newest term to update the conflict log.
 After all log entries checked, the candidate then can become a leader
 and starts to replicate the log entries to followers.
 
-For Raft, a node will also become a candidate and It increases its term if it failed to receive any message
-from the leader for a specific time. 
+For Raft, a node will also become a candidate and increases its term 
+if it failed to receive any message from the leader for a specific time. 
+It asks other nodes to vote for with its term.
+Any node receives the request will check 
+if the requested term is greater than that it has locally. 
+If the requested term is greater and this node did not vote for a candidate 
+which requested with this term, the node votes for the requested candidate.
+Bacause lo
 
 \subsubsection{Summary}
-Overall, Raft is easier to understand and implement, which makes it more commonly used. But in essence, the approach of Paxos and Raft is quite similar, the only difference between them is that the process of election of the leader of raft is simpler. Specifically: (i) When choosing a leader, Paxos divides terms between servers. While in raft, each follower can be a candidate in any term, but each follower can only vote for one candidate, and the candidate with the majority votes will become the leader. (ii) 
+Overall, Raft is easier to understand and implement, which makes it more commonly used. But in essence, the approach of Paxos and Raft is quite similar, the only difference between them is that the process of election of the leader of raft is simpler. Specifically: (i) When choosing a leader, Paxos divides terms between servers. While in raft, each follower can be a candidate in any term, but each follower can only vote for one candidate, and the candidate with the majority votes will become the leader. (ii) In Paxos, followers can vote to any candidate, 
 
 
 
@@ -890,13 +896,13 @@ There are only two type of RPCs in the Raft algorithm:
   previous leader has been committed or not. To solve this problem, a new commitment rule must apply --- For a leader to decide an entry
   is committed, in addition to the previous rule, at least one new entry from leader's term must also be stored on the majority of servers.
 
-\section{Application} \label{sec:application}
-We implement a distributed key-value database using the Raft consensus algorithm. Although Paxos is the dominant consensus algorithm in the industry, Raft is selected due to its strong focus on being an understandable algorithm. Further, unlike Paxos, Raft is a \textit{continuous} algorithm which we deem to be more suitable for our application. Although there is a variant of Paxos which is similarly continuous (Multi-Paxos), we find the Raft algorithm to be less complex to implement. 
+\section{Application and Algorithm Implementation} \label{sec:application}
+We implement a distributed key-value database in Java using the Raft consensus algorithm. Although Paxos is the dominant consensus algorithm in the industry, Raft is selected due to its strong focus on being an understandable algorithm. Further, unlike Paxos, Raft is a \textit{continuous} algorithm which we deem to be more suitable for our application. Although there is a variant of Paxos which is similarly continuous (Multi-Paxos), we find the Raft algorithm to be less complex to implement. 
 
-Our key-value database takes the form of a \texttt{HashMap} which is replicated (as opposed to sharded) across all nodes in the cluster. Due to this replication, it is crucial that our system remain consistent over time; key-value pairs should match across different nodes. Hence, we solve the problem with the aid of consensus.
+Our key-value database takes the form of a \texttt{HashMap} which is replicated (as opposed to sharded) across all nodes in the cluster. Due to this replication, it is crucial that our system remain consistent over time; key-value pairs should match across different nodes. Hence, we solve the problem with the aid of consensus. 
 
 \subsection{Architecture}
-All nodes in our system share the same architecture, shown in Figure \ref{fig:aofc}. Below, we discuss the rationale behind our design decisions.
+All nodes in our system share the same architecture, shown in Figure \ref{fig:aofc}. Communication between nodes is achieved by Java Remote Method Invocation (RMI). Below, we discuss the rationale behind our design decisions.
 
 \texttt{NodeImpl} is the main class of a node, holding references to a \texttt{RaftLog} object and an object corresponding to the current state of the node (i.e. follower, candidate or leader). The class implements \texttt{INode} (which extends \texttt{Remote}) to be able to receive RMI calls from other nodes---the \texttt{requestVote} method is called by candidate nodes and the \texttt{appendEntries} method is called by the leader. Additionally, the class implements \texttt{IClientInterface} to be able to receive RMI calls from clients.
 
@@ -925,10 +931,7 @@ The system is made available by starting at least half the nodes in the cluster.
 \end{itemize}
 Upon starting a node, it attempts to connect to all other nodes listed in the configuration file. In the event that it can't connect to a particular node, it tries again periodically for up to 30 seconds before continuing to the normal state of operation. As per the Raft algorithm specification, all nodes start in the follower state. The transition from one state to another is handled by the incumbent state. For instance, should a leader node receive an \texttt{appendEntries} RMI call containing a higher term than its own, its \texttt{state} object (i.e. \texttt{LeaderState} object) will handle cleanup operations (such as ensuring that periodic heartbeats no longer be sent) and instantiate a new \texttt{FollowerState} object, reassigning the \texttt{state} attribute of the \texttt{NodeImpl} object to the newly created object.
 
-During operation, changes made to the log are written to persistent storage. This ensures that upon crashing and recovering, a node can simply read the previous state of the log. Note, however, that this is not a requirement of the algorithm. Indeed, a node in our system can recover successfully even if all previous log entries are lost (e.g. due to storage corruption). Nonetheless, recovery is made more efficient if the log is written to persistent storage, since fewer log entries need to be sent from the leader in order for the recovered node's log to catch up.
-
-\subsection{Advantages and Disadvantages}
-
+During operation, changes made to the log are written to persistent storage. This ensures that upon crashing and recovering, a node can simply read the previous state of the log. Note, however, that this is not a requirement of the algorithm. Indeed, a node in our system can recover successfully even if all previous log entries are lost (e.g. due to storage corruption). Nonetheless, recovery is made more efficient if the log is written to persistent storage, since fewer log entries need to be sent from the leader in order for the recovered node's log (and hence, state machine) to catch up with that of the system.
 
 \bibliographystyle{ieeetr}
 \bibliography{main}
