@@ -24,6 +24,9 @@
 % text formatting packages
 \usepackage{latexsym}
 \usepackage[normalem]{ulem}
+\usepackage{xcolor}
+
+\newcommand{\todo}[2]{\textbf{\color{blue}[TODO \##1] #2}\par}
 
 \setcounter{secnumdepth}{4}
 
@@ -89,29 +92,27 @@
 \maketitle
 \thispagestyle{firststyle}
 
-\section{TODO}
-\begin{itemize}
+\todo{0A}{Place \textbackslash cite BEFORE a full stop (.), not after}
+\todo{0B}{INCLUDE WHITESPACE before \textbackslash cite}
+\todo{0C}{DO NOT include whitespace around em-dash (---)}
+\todo{0D}{Explain concepts in a way that is EASY TO UNDERSTAND}
+\todo{0E}{Be CONSISE---do not be overly verbose with your language}
 
-\item[-] Title + Author Information + Abstract + Keywords + Introduction Section (2 pages)
-
-\item[-] Background Survey. Give a survey of papers from this topic (4 pages)
-\item[-] Comparative Analysis. Give comparisons of different
-approaches presented in these papers(3 pages)
-\item[-] Discussions and Future Directions and Application Domains (3 pages)
-\item[-] Details of the discussed algorithm, its advantages and disadvantages, its implementation details (but no code explanations) (7 pages)
-\item[-] References (1 page) (Approximately 10 papers are acceptable).
-\item[-] Rearrange the paper.
-\end{itemize}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Abstract}
+
+\todo{1A}{Rewrite abstract---do this LAST}
+
 In a distributed system, the instructions between servers should be consistent. When one of the servers receives a single instruction from the client, it must communicate with other servers to ensure that all servers receive the same instructions in the same order. This will enable all servers to produce consistent results that look like one machine. This type of problem is defined as a consensus problem which is a key aspect on distributed system’s construction. There are many consensus algorithms used to solve the consensus problem. In this report, we mainly focus on introducing the Raft and Paxos algorithms and give a detail implementation with raft algorithm on distributed key-value based database application.
-
-
 
 \textbf{Keywords}: Distributed consensus, Raft, Paxos, State machine replication, Key-value based database
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
+
+\todo{2A}{Revise introduction to refer to new parts we've added---do this LAST}
 
 Achieving agreements among remote processes in a distributed system is a
 fundamental problem relevant to a wide range of applications
@@ -142,7 +143,7 @@ guarantee consensus under all circumstances.
 
 To further motivate the consensus problem and expand on its aforementioned
 fundamentality to many applications, we discuss in detail a range of relevant
-tasks in \S\ref{sec:relevant-problems}. We then focus on two algorithms by which
+tasks in \S\ref{sec:motivation}. We then focus on two algorithms by which
 to achieve consensus. \textit{Paxos} \cite{lamport1998part, lamport2001paxos}
 (detailed in \S\ref{sec:paxos}) has been the dominant consensus algorithm for
 much of the past two decades, underpinning most implementations of consensus
@@ -156,6 +157,8 @@ two in \S\ref{sec:comparitive}, discussing the benefits and drawbacks of either
 algorithm. Finally, we discuss our own implementation of the
 Raft algorithm as part of a key-value database
 application, providing a case study of the algorithm in a concrete context.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Problem Definition} \label{sec:consensus-def}
 
@@ -184,12 +187,7 @@ A consensus algorithm must satisfy the following conditions for every execution:
     that same value.
 \end{itemize}
 
-%% Maybe include in the future.
-% \subsection{ACID Theorem}
-
-\subsection{CAP Theorem and Consensus Algorithm}
-\label{sec:cap-theorem}
-
+\subsection{The CAP Theorem of Distributed Computing} \label{sec:cap-theorem}
 The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is impossible for an algorithm to provide more than two of these three properties:
 
 \begin{itemize}
@@ -202,17 +200,17 @@ The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is
     delayed, lost or dropped messages on the network.
 \end{itemize}
 
+\todo{3A}{Improve this part (below)}
+
 Consensus algorithms like Paxos and Raft sacrifice availability to achieve partition-tolerance and consistency. Nodes in clusters that guarantee consensus can recover from partitions and maintain consistency, but the smaller part not in the majority partition (not in the quorum) will not send responses if partition problem happens. Hence the availability is compromised in consensus algorithms.
 
-\subsection{Models of Computation} \label{sec:fundamental-models}
-
+\subsection{Consensus Under Different Models of Computation} \label{sec:fundamental-models}
 Solving the consensus problem varies in difficulty depending on the system model
 being considered. Different models assert different assumptions and thus, it is
 important to consider the impacts of such models on the consensus algorithms to
 be investigated.
 
 \subsubsection{Synchronous and Asynchronous Systems}
-
 \textit{Fundamental models} provide an ``abstract perspective'' for considering
 individual aspects of a distributed system \cite{coulouris2005distributed}. An
 \textit{interaction model} is a fundamental model concerned with communication
@@ -261,9 +259,7 @@ although it is not theoretically possible to guarantee consensus under the
 asynchronous model in all circumstances, consensus algorithms can still be
 implemented in practice.
 
-
-\subsection{Relevant Problems} \label{sec:relevant-problems}
-
+\subsection{Related Problems} \label{sec:related-problems}
 There are two other problems similar to the consensus problem---the
 \textit{Byzantine generals problem} (also known as the \textit{Byzantine
 agreement problem}) and the \textit{interactive consistency problem}. Table
@@ -301,6 +297,11 @@ transformed to one of the others by reduction \cite{fischer1983consensus}.
   \label{tab:dbtap}
 \end{table}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Motivation}
+\label{sec:motivation}
+
 The consensus problem is the key to many problems in distributed computing,
 making effective solutions to it highly desirable\cite{fritzke2001consensus}. To
 motivate consensus in context, related problems—highlighting useful applications
@@ -310,7 +311,9 @@ membership protocol (failure detector), leader election and mutual exclusion.
 The designer of distributed system should solve these problems primarily to
 ensure the stability and unity of the system.
 
-\subsubsection{Reliable Multicast}
+\subsection{Reliable Multicast}
+
+\todo{4A}{Explain this simply}
 
 Reliable Multicast provide processes communication primitives so that they can
 broadcast and deliver messages in such a way that processes consistent not only
@@ -339,8 +342,7 @@ related bugs due to synchronization or concurrency\cite{garcia1991ordered}. It
 is with these motivations that we will consider a reliable multicast technique
 when we choose consensus algorithms.
 
-\subsubsection{Membership/Failure Detection}
-
+\subsection{Membership/Failure Detection}
 Since it is impossible to safely distinguish between a crashed process and a
 slow process in an asynchronous distributed system, it is impossible to design
 a deterministic consensus algorithm in an asynchronous distributed system, even
@@ -349,6 +351,8 @@ This impossibility prompted many researchers to propose a minimum set of
 assumptions. As long as these assumptions are satisfied by the asynchronous
 distributed system, the consensus problem can be solved as well. The unreliable
 fault detector gives the answer to this challenge\cite{chandra1996unreliable}.
+
+\todo{4B}{Explain what an `oracle' is or remove the part below}
 
 An unreliable failure detector consists of a set of oracles: every process has
 an oracle to provide a list of processes that are suspected to have crashed.
@@ -375,8 +379,8 @@ detectors. One of them is named as $\diamond$S with following two properties:
 
 In practice, if a process does not receive a message response before the timeout occurs, the message sending process suspects that the message receiving process has crashed. This can satisfy strong completeness. However, there is no guarantee of accurate process crash detection. In Raft and Paxos part, we will discuss how these two algorithm handle failure detection in detail respectively.
 
-\subsubsection{Leader Election}
-
+\subsection{Leader Election}
+\todo{4C}{Motivate why leader election is a desirable problem to solve}
 Leader election is to elect a leader in a group of processes and let all the processes of the group agree to the leader. A leader is the coordinator among processes and there can only be one leader at a time. In distributed system, each node must exchange messages with other nodes in the network to make a decision. However, this method of communication between nodes is time-consuming, and when consistency between all nodes is required, coordination between nodes becomes difficult. Therefore, choose a leader to manage the access of shared resources is necessary. The implementation of leader election should follow two basic properties\cite{nugraheni2009formal}:
 
 \begin{itemize}
@@ -389,8 +393,8 @@ Leader election is to elect a leader in a group of processes and let all the pro
 In the leader election process, the leader is usually selected according to
 some criteria, such as the node with the largest identifier\cite{effatparvar2010improved}. After the leader is elected, the node will reach a state called termination state. There are two such states, namely the elected state and the non-elected state. When a node is in any state, it always maintains that state. Moreover, when the leader fails, the leader election mechanism can help to dynamically elect a new leader. Also in Raft and Paxos part, we will discuss how these two algorithm handle leader election in detail respectively.
 
-\subsubsection{Mutual Exclusion}
-
+\subsection{Mutual Exclusion}
+\todo{4D}{Motivate why mutual exclusion is a desirable problem to solve}
 The distributed mutual exclusion algorithm guarantees mutually exclusive access
 to a critical section among a number of competing
 processes\cite{lamport1987fast}. A mutual exclusion algorithm should meet the
@@ -433,8 +437,16 @@ algorithms are divided into three categories:
   intersection process of quorum.
 \end{itemize}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Background Survey}
+
+\todo{5A}{Write an opening for this section}
+\todo{5C}{Introduce that consensus algorithms can be classed as voting- or leader-based}
+
 \subsection{Faults Tolerant}
+\todo{5B}{Rewrite this subsection}
+\todo{5B(i)}{Reconsider if this subsection belongs here}
 There are nodes distributed in consensus algorithms communicating with each other.
 However, a node can crash or corrupt. Consensus algorithms are designed
 to solve those problems with faults tolerant.
@@ -455,7 +467,8 @@ all possible faults in the system model. The hierarchy of different faults
   \label{fig:aofc}
 \end{figure}
 
-\subsubsection{Voting-Based Consensus Algorithm}
+\subsection{Voting-Based Consensus Algorithm}
+\todo{5D}{Improve this subsection}
 In order to vote the agreement, nodes of voting-based consensus algorithms have to
 know each other and be adjustable to communicate easier\cite{nguyen2018survey}.
 Nodes communicate with others before making the decision
@@ -473,7 +486,10 @@ Byzantine fault tolerance based consensus which
 uses Practical Byzantine Fault Tolerance\cite{castro1999practical}.
 All of the three above are voting-based consensus algorithms.
 
+\todo{5E(i)}{Elaborate and provide more insight than simply a list of algorithms}
+
 \subsection{Proof-Based Consensus Algorithm}
+\todo{5F}{Provide an in-depth explanation re. the mechanics of proof-based consensus}
 The original work of proof-based consensus is called proof of work (PoW)
 \cite{nakamoto2019bitcoin}. In PoW, nodes are only permitted to
 broadcast their proposal only when they have performed enough effort which
@@ -487,10 +503,15 @@ and requires each node to solve it. The first node that solves the puzzle will m
 decision on an agreement and the others follow this decision.
 
 There are many variants of proof-based consensus
-which includes PoW, proof of sake (PoS), and their hybrod form.
+which includes PoW, proof of sake (PoS), and their hybrid form.
+
+\todo{5E(ii)}{Elaborate and provide more insight than simply a list of algorithms}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Comparative Analysis}
 \label{sec:comparitive}
+
 This section compares voting-based consensus with proof-based consensus.
 Proof-based consensus algorithms are usually used for blockchains since its
 original work is a peer-to-peer electronic cash system.
@@ -499,6 +520,8 @@ there is a high latency of making the decision on an agreement.
 Therefore this report only focuses on voting-based consensus and
 compares two voting-based consensus named Paxos and Raft
 based on the work \cite{howard2020paxos}.
+
+\todo{6A}{Discuss proof-based consensus rather than dismissing it}
 
 \subsection{Voting-based Consensus and Proof-based Consensus}
 The comparison between voting-based consensus proof-based consensus consensus
@@ -526,7 +549,6 @@ which limits its scalability. However, proof-based consensus is not limited when
 it uses \textit{proof} to perform appending.
 
 \subsection{Paxos and Raft}
-
 In the voting-based consensus, Paxos and Raft are the two dominate algorithms
 \cite{howard2020paxos}.
 Paxos is traditional and famous but also be known as difficult to understand.
@@ -570,8 +592,8 @@ its role changes or it fails.
 When the repetition ends, a new leader will be elected from all the nodes.
 Usually, at least a majority of votes are needed to elect a leader to
 ensure no overwriting happens on any previous logs.
-\subsubsection{Basics}
 
+\subsubsection{Basics}
 \begin{figure}[htp]
 \begin{center}
   \centering
@@ -652,7 +674,9 @@ If this happens, a new election with a new term will be started by a candidate.
 Overall, Raft is easier to understand and implement, which makes it more commonly used. But in essence, the approach of Paxos and Raft is quite similar, the only difference between them is that the process of election of the leader of raft is simpler. Specifically: (i) When choosing a leader, Paxos divides terms between servers. While in raft, each follower can be a candidate in any term, but each follower can only vote for one candidate, and the candidate with the majority votes will become the leader. (ii) In Paxos, followers can vote to any candidate, even if the log entries in that candidate is not the latest. Whereas follower in Raft only vote for the candidate whose log is at least as up-to-date as that follower's. This ensures the log of the leader
 is as up-to-date as the most of followers' (iii) Since Paxos divides terms between servers, once a leader is elected, in Paxos, the leader will replicate
 
-\section{Paxos Algorithm} \label{sec:paxos}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Paxos Algorithm Details} \label{sec:paxos}
 
 In distributed computing, there are processes cooperating with each other.
 Paxos is designed to achieve consensus which ensures
@@ -693,8 +717,8 @@ either accept or decline the \textit{accept} request.
     Messages can be duplicated, can be lost, but can not be corrupted.
   \end{assumption}
 \end{quote}
-\subsection{Two Principles}
 
+\subsection{Two Principles}
 The principles are given here and will be applied later,
 \begin{quote}
   P1. An acceptor must accept the first proposal that it receives.
@@ -732,7 +756,6 @@ The principles are given here and will be applied later,
 \end{quote}
 
 \subsection{Three Agents}
-
 To achieve the consensus, there are three classes of agents
 which are proposers, acceptors and learners.
 When a process proposes a proposal,
@@ -747,9 +770,8 @@ learn a chosen value at the same time.
 Thus the three classes of agents are
 not mutually exclusive for a single process.
 
-
 \subsection{Implementation}
-\subsubsection{Choosing A Value}\label{Choosing}
+\subsubsection{Choosing A Value} \label{Choosing}
 The Paxos algorithm \cite{lamport1998part} chooses a leader
 from the processes of assumption \ref{as:2}.
 This leader is the leader of the class of proposers and
@@ -801,7 +823,6 @@ with that acceptors handling messages sequentially,
 performance hiccups may occurs when it takes time for slower acceptors
 to catch up.
 
-
 Paxos has several significant shortcomings. The first one is that it
 is exceptionally difficult to understand\cite{conf/usenix/OngaroO14}.
 To describe the Paxos algorithm, Lamport described a parliament on a
@@ -825,19 +846,26 @@ The highest-numbered proposal is always stored in a proposer's stable storage.
 The intended response is always stored in an acceptor's stable storage
 before it responds.
 
-\section{Raft algorithm} \label{sec:raft}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Raft Algorithm Details} \label{sec:raft}
+
 The Raft algorithm was proposed in 2014\cite{conf/usenix/OngaroO14} as an alternative to the (Multi-)Paxos algorithm, which is more
 understandable and easier to implement a practical system. The highlight of the Raft algorithm is that it adopts an
 engineering thinking --- It simplifies the model of the design according to the requirements in practical applications and
 modularizes the process of the algorithm. From the perspective of performance and security, the Raft algorithm is also almost
 the same as Paxos \cite{conf/usenix/OngaroO14}.
+
 \subsection{Roles}
+
   \subsubsection{Follower}
   All nodes are followers when they are started. The followers are completely passive, they can only respond to incoming
   messages. If the client's message is sent to a follower, the message will be redirected to the leader of this cluster. Followers may
   also be able to become a leader through elections under certain conditions.
+
   \subsubsection{Leader}
   There can be only one Leader in the entire cluster at the same time. The leader handles all client interactions.
+
   \subsubsection{Candidate}
   The candidate state is a state between the follower state and the leader state. When a follower becomes a candidate, an election
   will be held. The candidate who wins the election will be the new leader.
@@ -847,22 +875,24 @@ the same as Paxos \cite{conf/usenix/OngaroO14}.
       \caption{Server states}
       \label{fig:raft-states}
   \end{figure}
+
 \subsection{Protocol}
 In the Raft algorithm, time is divided into terms\cite{conf/usenix/OngaroO14}, Each term has a number, and the number increments when a new term starts. Each term starts
 with an election. If the election is successful, then the chosen leader will serve out for the rest of the term, which means that
 only one leader can be elected in a given term. If the election is not successful, then the candidate starts a new term. Each node
 in the cluster maintains the value of the current term number and it should be stored reliably. The function of the term and term number is
 to allow the nodes to identify the information that is out of date.
-\par
+
 In order to let the followers believe there is an active leader in the cluster, followers expect to receive heartbeat messages from
 the leader regularly. If the follower's timeout of heartbeat message elapses, it assumes that the leader crashed and will start a
 new election. This timeout is often much longer than the propagation time of the message in the network.
-\par
+
 There are only two type of RPCs in the Raft algorithm:
 \begin{itemize}
   \item \textbf{RequestVote RPC}: invoked by candidates to gather votes\cite{conf/usenix/OngaroO14} from other nodes.
   \item \textbf{AppendEntries RPC}: invoked by the leader to replicate log entries\cite{conf/usenix/OngaroO14}.
 \end{itemize}
+
   \subsubsection{Leader Election}
   When a node begins an election, the first thing it does is to increment its current term number. The node then converts itself from
   follower state to candidate state. To win the election, the node must receive votes from a majority of nodes in the cluster. The node
@@ -872,38 +902,42 @@ There are only two type of RPCs in the Raft algorithm:
     \item It receives a RPC from a leader, which means one of other candidates wins the election, the current node becomes a follower.
     \item Election timeout elapses, which means no one wins the election. The node will then increment the term number and start a new election
   \end{itemize}
-  \par
+
   To ensure safety, each node can only give out at most one vote in a term. This guarantees that only one candidate can get votes from
   the majority in the same term, thus only one candidate can win the election. Also, to prevent live lock of the election, the election
   timeout of each node is chosen randomly.
+
   \subsubsection{Log Replication}
   Once a leader is elected, it receives all client's request messages. These messages contain a command to be executed by the replicated
   state machine. The leader creates a log entry for each request from the clients. Apart from commands, the log entry also contains an index
   number in the log and a term number when the log entry was first created. Each log entry is committed if known to be stored in the logs of
   the majority of the nodes.
-  \par
+
   When the leader receives a command from a client, it appends the command with the current term number and index number to its log. Then the leader
   sends AppendEntries RPCs to all followers. Once a new log entry is committed, the leader passes the command to its state machine and
   notifies all followers of this new log entry. When the followers receive these RPCs, they pass the command to their state machine.
-  \par
+
   To ensure consistency of logs, each AppendEntries RPC contains the index and the term of the previous log entry. The followers who receives the RPC will
   reject the request if they do not have a matching log entry. It then is guaranteed that a new entry is only accepted if the logs match in
   their previous entry. So if a given log entry is committed, its all previous log entries are also committed.
-  \par
+
   At the beginning of a new leader's term, the old leaders may have left some log entries that are partially replicated. The way that the Raft
   algorithm used to solve this problem is to force all follower to duplicate its log, which will also force all follower to discard all the
   inconsistent log entries and fill in all missing log entries. The leader maintains a value nextIndex for each follower, which marks the index
   of the next log entry to send to that follower. When AppendEntries consistency check fails, it decrements the nextIndex and retries until the
   follower's log is repaired.
+
   \subsubsection{Safety}
   If a leader has decided that a log entry is committed, then that entry should be present in the logs of all future leaders\cite{conf/usenix/OngaroO14}. To guarantee this,
   the algorithm picks the candidate to win the election such that it has the log that is most likely to have all the entries that have been
   committed. So the candidates must include log info in RequestVote RPCs including index and term of the last log entry. And the voting servers
   have to deny if its log is more complete.
-  \par
+
   Another safety issue is that if a leader crashes while replicating logs, the new leader will not know whether the last log entry of the
   previous leader has been committed or not. To solve this problem, a new commitment rule must apply --- For a leader to decide an entry
   is committed, in addition to the previous rule, at least one new entry from leader's term must also be stored on the majority of servers.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Application and Algorithm Implementation} \label{sec:application}
 We implement a distributed key-value database in Java using the Raft consensus algorithm. Although Paxos is the dominant consensus algorithm in the industry, Raft is selected due to its strong focus on being an understandable algorithm. Further, unlike Paxos, Raft is a \textit{continuous} algorithm which we deem to be more suitable for our application. Although there is a variant of Paxos which is similarly continuous (Multi-Paxos), we find the Raft algorithm to be less complex to implement.
@@ -942,7 +976,14 @@ Upon starting a node, it attempts to connect to all other nodes listed in the co
 
 During operation, changes made to the log are written to persistent storage. This ensures that upon crashing and recovering, a node can simply read the previous state of the log. Note, however, that this is not a requirement of the algorithm. Indeed, a node in our system can recover successfully even if all previous log entries are lost (e.g. due to storage corruption). Nonetheless, recovery is made more efficient if the log is written to persistent storage, since fewer log entries need to be sent from the leader in order for the recovered node's log (and hence, state machine) to catch up with that of the system.
 
+\todo{9A}{Discuss enhancements we made (e.g. client can send to any node)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Future Directions and Application Domains}
+
+\todo{10A}{Complete this section}
+
 Consensus algorithm that guarantee partition-tolerance and consistency like Paxos and Raft can be applied to application including:
 \begin{itemize}
     \item Distributed duplicated transaction system.
