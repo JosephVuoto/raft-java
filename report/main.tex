@@ -94,7 +94,7 @@ approaches presented in these papers(3 pages)
 \end{itemize}
 
 \section{Abstract}
-In a distributed system, the instructions between servers should be consistent. When one of the servers receives a single instruction from the client, it must communicate with other servers to ensure that all servers receive the same instructions in the same order. This will enable all servers to produce consistent results that look like one machine. This type of problem is defined as a consensus problem which is a key aspect on distributed system’s construction. There are many consensus algorithms used to solve the consensus problem. In this report, we mainly focus on introducing the Raft and Paxos algorithms and give a detail implementation with raft algorithm on distributed key-value based database application. 
+In a distributed system, the instructions between servers should be consistent. When one of the servers receives a single instruction from the client, it must communicate with other servers to ensure that all servers receive the same instructions in the same order. This will enable all servers to produce consistent results that look like one machine. This type of problem is defined as a consensus problem which is a key aspect on distributed system’s construction. There are many consensus algorithms used to solve the consensus problem. In this report, we mainly focus on introducing the Raft and Paxos algorithms and give a detail implementation with raft algorithm on distributed key-value based database application.
 
 
 
@@ -137,19 +137,17 @@ to achieve consensus. \textit{Paxos} \cite{lamport1998part, lamport2001paxos}
 (detailed in \S\ref{sec:paxos}) has been the dominant consensus algorithm for
 much of the past two decades, underpinning most implementations of consensus
 \cite{ongaro2014search}. More recently, however, a contending consensus
-algorithm has been proposed. Raft \cite{ongaro2014search} (detailed in
+algorithm has been proposed. \textit{Raft} \cite{ongaro2014search} (detailed in
 \S\ref{sec:raft}) is purported by its authors to ``[produce] a result equivalent
 to (multi-)Paxos'' and be ``as efficient as Paxos'' yet ``more understandable''
 and able to ``provide a better foundation for building practical systems.''
 \cite{ongaro2014search} We provide a detailed comparative analysis between the
 two in \S\ref{sec:comparitive}, discussing the benefits and drawbacks of either
 algorithm. Finally, we discuss our own implementation of the
-\textbf{(Paxos/Raft)} algorithm as part of a \textbf{(application type)}
+Raft algorithm as part of a key-value database
 application, providing a case study of the algorithm in a concrete context.
 
-
-\section{Background Survey} 
-\subsection{Consensus Problem } \label{sec:consensus-def}
+\section{Problem Definition} \label{sec:consensus-def}
 
 The consensus problem is defined with respect to a collection of $N$ processes
 which communicate by message passing. Every process $p_{i}$ $(i = 1, \ldots, N)$
@@ -176,65 +174,10 @@ A consensus algorithm must satisfy the following conditions for every execution:
     that same value.
 \end{itemize}
 
-\subsection{Consensus Algorithms}
-\subsubsection{Faults Tolerant}
-There are nodes distributed in consensus algorithms communicating with each other.
-However, a node can crash or corrupt. Consensus algorithms are designed 
-to solve those problems with faults tolerant.
-An algorithm has the feature called Crash Fault Tolerant (CFT)
-if it can handle failures caused by process crashes or fail-stops.
-Besides, an algorithm has the feature called Byzantine Fault Tolerant (BFT) 
-if it can handle arbitrary faults, 
-including those arising from malicious actions of an adversary.
-
-Any BFT algorithm is also a CFT algorithm, since Byzantine failures encompass
-all possible faults in the system model. The hierarchy of different faults
-\cite{barborak1993consensus} is shown in Figure \ref{fig:aofc}.
-
-\begin{figure}[htp]
-  \centering
-  \includegraphics[width=0.5\textwidth]{img/AOFC.pdf}
-  \caption{An ordered fault classification (Barborak et al.)}
-  \label{fig:aofc}
-\end{figure}
-
-\subsubsection{Voting-Based Consensus Algorithm}
-In order to vote the agreement, nodes of voting-based consensus algorithms have to 
-know each other and be adjustable to communicate easier\cite{nguyen2018survey}.
-Nodes communicate with others before making the decision 
-to approve a proposed value or not.
-Almost all the variants of voting-based algorithm contain the feature
-that a majority of agreements is required to achieve the consensus.
-However, since a node can crash, it brings the problem that the decision can not
-be made through the majority's decision. Thus, at least \textit{f+1} nodes need 
-to run properly when in the worst case \textit{f} nodes crash. 
-
-Paxos\cite{lamport2001paxos} and Raft\cite{conf/usenix/OngaroO14} are 
-crash fault tolerance based consensus.
-Besides, Hyperledger Fabric\cite{cachin2016architecture} is 
-Byzantine fault tolerance based consensus which 
-uses Practical Byzantine Fault Tolerance\cite{castro1999practical}.
-All of the three above are voting-based consensus algorithms.
-
-\subsubsection{Proof-Based Consensus Algorithm}
-The original work of proof-based consensus is called proof of work (PoW)
-\cite{nakamoto2019bitcoin}. In PoW, nodes are only permitted to 
-broadcast their proposal only when they have performed enough effort which
-is usually done by computing power.
-Unlike voting-based consensus which uses the majority's votes to 
-make the decision on an agreement, proof-based consensus makes the decision 
-following the decision of the node that performs sufficient proof.
-When multiple nodes try to propose their own value, an agreement has to be made
-by all the nodes. To achieve that, PoW gives a difficult puzzle with adjusted difficulty
-and requires each node to solve it. The first node that solves the puzzle will make the
-decision on an agreement and the others follow this decision.
-
-There are many variants of proof-based consensus
-which includes PoW, proof of sake (PoS), and their hybrod form. 
 %% Maybe include in the future.
 % \subsection{ACID Theorem}
 
-\subsection{CAP Theorem and Consensus Algorithm} 
+\subsection{CAP Theorem and Consensus Algorithm}
 \label{sec:cap-theorem}
 
 The CAP theorem \cite{brewer2012cap} states that, in a distributed system, it is impossible for an algorithm to provide more than two of these three properties:
@@ -348,75 +291,75 @@ transformed to one of the others by reduction \cite{fischer1983consensus}.
   \label{tab:dbtap}
 \end{table}
 
-The consensus problem is the key to many problems in distributed computing, 
-making effective solutions to it highly desirable\cite{fritzke2001consensus}. To 
-motivate consensus in context, related problems—highlighting useful applications 
-in distributed computing—are discussed in this section. The following four 
-issues are all related to consistency problem. They are reliable multicast, 
-membership protocol (failure detector), leader election and mutual exclusion. 
-The designer of distributed system should solve these problems primarily to 
+The consensus problem is the key to many problems in distributed computing,
+making effective solutions to it highly desirable\cite{fritzke2001consensus}. To
+motivate consensus in context, related problems—highlighting useful applications
+in distributed computing—are discussed in this section. The following four
+issues are all related to consistency problem. They are reliable multicast,
+membership protocol (failure detector), leader election and mutual exclusion.
+The designer of distributed system should solve these problems primarily to
 ensure the stability and unity of the system.
 
 \subsubsection{Reliable Multicast}
 
-Reliable Multicast provide processes communication primitives so that they can 
-broadcast and deliver messages in such a way that processes consistent not only 
+Reliable Multicast provide processes communication primitives so that they can
+broadcast and deliver messages in such a way that processes consistent not only
 on the set of messages they deliver but also on the order of message deliveries
-\cite{fritzke2001consensus}. Usually, the problem of reliability is addressed by 
-considering various types of reliability protocols. The problem of ordering 
+\cite{fritzke2001consensus}. Usually, the problem of reliability is addressed by
+considering various types of reliability protocols. The problem of ordering
 properties are usually as follows.\cite{garcia1991ordered}
 
 \begin{itemize}
-  \item \textbf{Single source ordering}: If messages are from the same source 
-  site, and they are sent to the same multicast group, then they should be 
-  received by all target processes in the same order. 
-  \item \textbf{Multiple source ordering}: If messages are from different 
-  source sites, and they are sent to the same multicast group, 
-  then they should be received by all target processes in the same order. 
-  \item \textbf{Multiple group ordering}: If two messages are from different 
-  source sites, and they are sent to different but overlapping multicast groups, 
+  \item \textbf{Single source ordering}: If messages are from the same source
+  site, and they are sent to the same multicast group, then they should be
+  received by all target processes in the same order.
+  \item \textbf{Multiple source ordering}: If messages are from different
+  source sites, and they are sent to the same multicast group,
+  then they should be received by all target processes in the same order.
+  \item \textbf{Multiple group ordering}: If two messages are from different
+  source sites, and they are sent to different but overlapping multicast groups,
   they should be received by all target processes in the same order.
 \end{itemize}
 
-Ordering in multicast is important, booking, banking, inventory and E-commerce 
-are great applications built on distributed systems that require consistent 
-message order between processes. In addition, ordered communication primitives 
-can simplify the design of distributed application and reduce the possibility of 
-related bugs due to synchronization or concurrency\cite{garcia1991ordered}. It 
-is with these motivations that we will consider a reliable multicast technique 
+Ordering in multicast is important, booking, banking, inventory and E-commerce
+are great applications built on distributed systems that require consistent
+message order between processes. In addition, ordered communication primitives
+can simplify the design of distributed application and reduce the possibility of
+related bugs due to synchronization or concurrency\cite{garcia1991ordered}. It
+is with these motivations that we will consider a reliable multicast technique
 when we choose consensus algorithms.
 
 \subsubsection{Membership/Failure Detection}
 
-Since it is impossible to safely distinguish between a crashed process and a 
-slow process in an asynchronous distributed system, it is impossible to design 
-a deterministic consensus algorithm in an asynchronous distributed system, even 
-in the case of a single process crash failure\cite{fischer1985impossibility}. 
-This impossibility prompted many researchers to propose a minimum set of 
-assumptions. As long as these assumptions are satisfied by the asynchronous 
-distributed system, the consensus problem can be solved as well. The unreliable 
-fault detector gives the answer to this challenge\cite{chandra1996unreliable}. 
+Since it is impossible to safely distinguish between a crashed process and a
+slow process in an asynchronous distributed system, it is impossible to design
+a deterministic consensus algorithm in an asynchronous distributed system, even
+in the case of a single process crash failure\cite{fischer1985impossibility}.
+This impossibility prompted many researchers to propose a minimum set of
+assumptions. As long as these assumptions are satisfied by the asynchronous
+distributed system, the consensus problem can be solved as well. The unreliable
+fault detector gives the answer to this challenge\cite{chandra1996unreliable}.
 
-An unreliable failure detector consists of a set of oracles: every process has 
-an oracle to provide a list of processes that are suspected to have crashed. 
-racle will make mistakes, such as not suspecting a process that has crashed, or 
-suspecting a process that has not crashed. When the oracle of the process 
-p$_{i}$ suspects that p$_{j}$ crashed, we say that p$_{i}$ suspects p$_{j}$. 
+An unreliable failure detector consists of a set of oracles: every process has
+an oracle to provide a list of processes that are suspected to have crashed.
+racle will make mistakes, such as not suspecting a process that has crashed, or
+suspecting a process that has not crashed. When the oracle of the process
+p$_{i}$ suspects that p$_{j}$ crashed, we say that p$_{i}$ suspects p$_{j}$.
 The mistakes of the failure detector are typically defined by two properties:
 
 \begin{itemize}
-  \item \textbf{Completeness}: In the end, crashed processes should be 
-  suspected. 
-  \item \textbf{Accuracy}: Limit wrong suspicion of well-running processes. 
+  \item \textbf{Completeness}: In the end, crashed processes should be
+  suspected.
+  \item \textbf{Accuracy}: Limit wrong suspicion of well-running processes.
 \end{itemize}
 
-Chandra and Toueg\cite{chandra1996unreliable} defined several classes of failure 
+Chandra and Toueg\cite{chandra1996unreliable} defined several classes of failure
 detectors. One of them is named as $\diamond$S with following two properties:
 
 \begin{itemize}
-  \item \textbf{Strong completeness}: Ultimately, all crashed processes are 
+  \item \textbf{Strong completeness}: Ultimately, all crashed processes are
   constantly suspected by every well-running process.
-  \item \textbf{Eventual weak accuracy}: Ultimately, majority of well-running 
+  \item \textbf{Eventual weak accuracy}: Ultimately, majority of well-running
   processes are never suspected by any well-running processes.
 \end{itemize}
 
@@ -427,71 +370,135 @@ In practice, if a process does not receive a message response before the timeout
 Leader election is to elect a leader in a group of processes and let all the processes of the group agree to the leader. A leader is the coordinator among processes and there can only be one leader at a time. In distributed system, each node must exchange messages with other nodes in the network to make a decision. However, this method of communication between nodes is time-consuming, and when consistency between all nodes is required, coordination between nodes becomes difficult. Therefore, choose a leader to manage the access of shared resources is necessary. The implementation of leader election should follow two basic properties\cite{nugraheni2009formal}:
 
 \begin{itemize}
-  \item \textbf{Safety}: There will never be two or more leaders at the same 
+  \item \textbf{Safety}: There will never be two or more leaders at the same
   time.
-  \item \textbf{Liveness}: The election algorithm always ends, and each process 
+  \item \textbf{Liveness}: The election algorithm always ends, and each process
   knows the leader who is ultimately elected.
 \end{itemize}
 
-In the leader election process, the leader is usually selected according to 
+In the leader election process, the leader is usually selected according to
 some criteria, such as the node with the largest identifier\cite{effatparvar2010improved}. After the leader is elected, the node will reach a state called termination state. There are two such states, namely the elected state and the non-elected state. When a node is in any state, it always maintains that state. Moreover, when the leader fails, the leader election mechanism can help to dynamically elect a new leader. Also in Raft and Paxos part, we will discuss how these two algorithm handle leader election in detail respectively.
 
 \subsubsection{Mutual Exclusion}
 
-The distributed mutual exclusion algorithm guarantees mutually exclusive access 
-to a critical section among a number of competing 
-processes\cite{lamport1987fast}. A mutual exclusion algorithm should meet the 
-following principles\cite{velazques1993survey}: 
+The distributed mutual exclusion algorithm guarantees mutually exclusive access
+to a critical section among a number of competing
+processes\cite{lamport1987fast}. A mutual exclusion algorithm should meet the
+following principles\cite{velazques1993survey}:
 
 \begin{itemize}
-  \item \textbf{}Only one process can be allowed to access its critical 
+  \item \textbf{}Only one process can be allowed to access its critical
   section at the same time.
-  \item \textbf{}If there is no process in the critical section, any 
-  process asking an access to critical part must be allowed within a limited 
-  time. 
-  \item \textbf{}When a competing process request to access the critical 
+  \item \textbf{}If there is no process in the critical section, any
+  process asking an access to critical part must be allowed within a limited
+  time.
+  \item \textbf{}When a competing process request to access the critical
   sections concurrently, it cannot be put off indefinitely.
-  \item \textbf{}A requesting process cannot be prevented by another process 
-  from entering critical section within a limited delay. 
+  \item \textbf{}A requesting process cannot be prevented by another process
+  from entering critical section within a limited delay.
 \end{itemize}
 
-In summary, an algorithm must provide mutually exclusive access to a resource, 
-ensure the freedom of deadlock, ensure the freedom of starvation, and must 
-provide a certain fairness in the order of granting requests. Mutually exclusive 
+In summary, an algorithm must provide mutually exclusive access to a resource,
+ensure the freedom of deadlock, ensure the freedom of starvation, and must
+provide a certain fairness in the order of granting requests. Mutually exclusive
 algorithms are divided into three categories:
 
 \begin{itemize}
-  \item \textbf{Token-based algorithm}: All processes share a token, and only the 
-  process that obtains the token can enter the critical section. The safety, 
-  liveness, and fairness of such algorithms are easily guaranteed. But there is 
-  a disadvantage is that the token is lost, there is only one token in the 
-  system, after the loss, you need to regenerate and ensure that the generated 
-  token is still the only one in the system. 
-  \item \textbf{Non-token-based algorithm}: Also called Permission-based. It is 
-  through the exchange of messages between processes to determine whether they 
-  can enter the critical section. 
-  \item \textbf{Quorum-based algorithm}: The Quorum algorithm is actually a 
-  Non-token-based algorithm, but the principle of the quorum algorithm is 
-  different from other Non-token-based algorithms, so it is taken out 
-  separately. The idea of Quorum is very simple, a collection of multiple 
-  processes form a quorum, there are multiple quorum in the system, Any two 
-  quorums will contain at least one common process, that is, the intersection 
-  is not empty. Whether or not to enter the critical section depends on the 
-  intersection process of quorum. 
+  \item \textbf{Token-based algorithm}: All processes share a token, and only the
+  process that obtains the token can enter the critical section. The safety,
+  liveness, and fairness of such algorithms are easily guaranteed. But there is
+  a disadvantage is that the token is lost, there is only one token in the
+  system, after the loss, you need to regenerate and ensure that the generated
+  token is still the only one in the system.
+  \item \textbf{Non-token-based algorithm}: Also called Permission-based. It is
+  through the exchange of messages between processes to determine whether they
+  can enter the critical section.
+  \item \textbf{Quorum-based algorithm}: The Quorum algorithm is actually a
+  Non-token-based algorithm, but the principle of the quorum algorithm is
+  different from other Non-token-based algorithms, so it is taken out
+  separately. The idea of Quorum is very simple, a collection of multiple
+  processes form a quorum, there are multiple quorum in the system, Any two
+  quorums will contain at least one common process, that is, the intersection
+  is not empty. Whether or not to enter the critical section depends on the
+  intersection process of quorum.
 \end{itemize}
+
+\section{Background Survey}
+\subsection{Faults Tolerant}
+There are nodes distributed in consensus algorithms communicating with each other.
+However, a node can crash or corrupt. Consensus algorithms are designed
+to solve those problems with faults tolerant.
+An algorithm has the feature called Crash Fault Tolerant (CFT)
+if it can handle failures caused by process crashes or fail-stops.
+Besides, an algorithm has the feature called Byzantine Fault Tolerant (BFT)
+if it can handle arbitrary faults,
+including those arising from malicious actions of an adversary.
+
+Any BFT algorithm is also a CFT algorithm, since Byzantine failures encompass
+all possible faults in the system model. The hierarchy of different faults
+\cite{barborak1993consensus} is shown in Figure \ref{fig:aofc}.
+
+\begin{figure}[htp]
+  \centering
+  \includegraphics[width=0.5\textwidth]{img/AOFC.pdf}
+  \caption{An ordered fault classification (Barborak et al.)}
+  \label{fig:aofc}
+\end{figure}
+
+\subsubsection{Voting-Based Consensus Algorithm}
+In order to vote the agreement, nodes of voting-based consensus algorithms have to
+know each other and be adjustable to communicate easier\cite{nguyen2018survey}.
+Nodes communicate with others before making the decision
+to approve a proposed value or not.
+Almost all the variants of voting-based algorithm contain the feature
+that a majority of agreements is required to achieve the consensus.
+However, since a node can crash, it brings the problem that the decision can not
+be made through the majority's decision. Thus, at least \textit{f+1} nodes need
+to run properly when in the worst case \textit{f} nodes crash.
+
+Paxos\cite{lamport2001paxos} and Raft\cite{conf/usenix/OngaroO14} are
+crash fault tolerance based consensus.
+Besides, Hyperledger Fabric\cite{cachin2016architecture} is
+Byzantine fault tolerance based consensus which
+uses Practical Byzantine Fault Tolerance\cite{castro1999practical}.
+All of the three above are voting-based consensus algorithms.
+
+\subsection{Proof-Based Consensus Algorithm}
+The original work of proof-based consensus is called proof of work (PoW)
+\cite{nakamoto2019bitcoin}. In PoW, nodes are only permitted to
+broadcast their proposal only when they have performed enough effort which
+is usually done by computing power.
+Unlike voting-based consensus which uses the majority's votes to
+make the decision on an agreement, proof-based consensus makes the decision
+following the decision of the node that performs sufficient proof.
+When multiple nodes try to propose their own value, an agreement has to be made
+by all the nodes. To achieve that, PoW gives a difficult puzzle with adjusted difficulty
+and requires each node to solve it. The first node that solves the puzzle will make the
+decision on an agreement and the others follow this decision.
+
+There are many variants of proof-based consensus
+which includes PoW, proof of sake (PoS), and their hybrod form.
 
 \section{Comparative Analysis}
 \label{sec:comparitive}
-This section is based on the work \cite{howard2020paxos} which
-presents the comparison between Paxos and Raft when they are 
-both voting-based consensus. 
+This section compares voting-based consensus with proof-based consensus.
+Proof-based consensus algorithms are usually used for blockchains since its
+original work is a peer-to-peer electronic cash system.
+Because difficult puzzles are used,
+there is a high latency of making the decision on an agreement.
+Therefore this report only focuses on voting-based consensus and
+compares two voting-based consensus named Paxos and Raft
+based on the work \cite{howard2020paxos}.
+
+\subsection{Voting-based Consensus and Proof-based Consensus}
 The comparison between voting-based consensus proof-based consensus consensus
-is also shown in Figure~\ref{voting-proof}.
+is shown in Figure~\ref{voting-proof}.
+
 \begin{figure}[htp]
 \begin{center}
 \begin{tabular}{|c|c|c|}
 \hline
-\textbf{Criterion} & \textbf{Voting-based  Consensus} & \textbf{Proof-based Consensus} 
+\textbf{Criterion} & \textbf{Voting-based  Consensus} & \textbf{Proof-based Consensus}
 \\ \hline
 Agreement making basement & \begin{tabular}[c]{@{}c@{}}From majority \\ of the node decisions\end{tabular} & \begin{tabular}[c]{@{}c@{}}Following nodes \\ performing enough proof\end{tabular} \\ \hline
 Nodes can join freely & No & Mostly \\ \hline
@@ -503,13 +510,13 @@ Nodes identities are managed & Yes & No \\ \hline
     \label{voting-proof}
 \end{center}
 \end{figure}
+Voting-based consensus relies on the votes from a majority in both
+leader election and log appending, thus, it requires that all nodes know each other
+which limits its scalability. However, proof-based consensus is not limited when
+it uses \textit{proof} to perform appending.
 
 \subsection{Paxos and Raft}
-Proof-based consensus algorithms are usually used for blockchains since its
-original work is a peer-to-peer electronic cash system.
-Because of difficult puzzles
-are used, there is a high latency of making the decision on an agreement. 
-Therefore this report only focuses on voting-based consensus. 
+
 In the voting-based consensus, Paxos and Raft are the two dominate algorithms
 \cite{howard2020paxos}.
 Paxos is traditional and famous but also be known as difficult to understand.
@@ -519,39 +526,39 @@ comparing with Paxos.
 When Paxos and Raft are very similar to achieve distributed consensus,
 the main difference between them is only in the leader election phase.
 Paxos allows any node to become a leader and then updates its logs
-if the new leader's log is not up-to-date. 
+if the new leader's log is not up-to-date.
 However, Raft only allows the node that with up-to-date logs to become the leader.
-Therefore, there is no logs exchanging during leader election 
-which makes Raft much more efficient than Paxos. 
+Therefore, there is no logs exchanging during leader election
+which makes Raft much more efficient than Paxos.
 
-State machines are both used in Paxos and Raft which compose a set of nodes 
-to act as a single service that guarantees the consistency. 
-The state machine requires the same order operations because 
-programmers would treat the service as a single system even there are 
+State machines are both used in Paxos and Raft which compose a set of nodes
+to act as a single service that guarantees the consistency.
+The state machine requires the same order operations because
+programmers would treat the service as a single system even there are
 multiple nodes running in Paxos or Raft.
 
 Raft achieve consensus in three different ways.
-The first is the presentation. The Raft paper describes leader-based consensus 
+The first is the presentation. The Raft paper describes leader-based consensus
 using a new abstraction for state machine replication.
 This new abstraction is popular with engineers.
-The second is the simplicity. The Raft paper put simplicity at a higher priority but 
-performance at the lower. For example, Paxos can append logs out-of-order 
-although this requires extra protocols to filling the log in. 
+The second is the simplicity. The Raft paper put simplicity at a higher priority but
+performance at the lower. For example, Paxos can append logs out-of-order
+although this requires extra protocols to filling the log in.
 Conversely, only in-order logs are allowed in Raft.
 The third is underlying algorithm. The Raft algorithm uses a new approach to elect
-the leader which makes not only leader election different 
+the leader which makes not only leader election different
 but also the safety guaranteeing different.
 
 \subsubsection{Approach}
 Leader-based approach is many used in consensus algorithms including Paxos and Raft.
 Those algorithms operate at a high level as follows:
 One node is selected among all the nodes to be the \textit{leader}.
-This leader asks the other nodes to append a same log, 
+This leader asks the other nodes to append a same log,
 once the leader has received confirmation from a majority,
 it then appends the logs to its state machine. This appending repeats in this leader until
 its role changes or it fails.
 When the repetition ends, a new leader will be elected from all the nodes.
-Usually, at least a majority of votes are needed to elect a leader to 
+Usually, at least a majority of votes are needed to elect a leader to
 ensure no overwriting happens on any previous logs.
 \subsubsection{Basics}
 
@@ -563,8 +570,8 @@ ensure no overwriting happens on any previous logs.
   \label{fig:roles-transitions}
 \end{center}
 \end{figure}
-As Figure~\ref{fig:roles-transitions} indicates, a node may be a \textit{Follower}, 
-a \textit{Candidate} or a \textit{Leader}. 
+As Figure~\ref{fig:roles-transitions} indicates, a node may be a \textit{Follower},
+a \textit{Candidate} or a \textit{Leader}.
 The \textit{Follower} is responsible for
 remote procedure calls which also includes voting for a leader.
 The \textit{Candidate} is only at the election phase when a node in \textit{Candidate}
@@ -572,27 +579,27 @@ is trying to become a leader.
 The \textit{Leader} is responsible for appending logs to its state machine after
 asked other nodes to do it.
 
-At the very beginning, all nodes are follower. Each of the nodes keeps its follower role 
+At the very beginning, all nodes are follower. Each of the nodes keeps its follower role
 until it believes the leader has failed, then it becomes a candidate trying to become
 a leader. If a node successfully became a leader, the others became followers following
 the appending operation broadcasted by this leader.
 Each nodes also keeps a number, named \textit{term} which used to perform leader election
 during the running time of the whole system. When a node receives any message,
 it firstly check the term of the sender, if the sender's term is greater than local term,
-the node updates its term using the greater one and then reacts according to the message. 
+the node updates its term using the greater one and then reacts according to the message.
 If the two terms are equal, the node reacts directly. Otherwise, if the sender's term
 is smaller than the local term, it responds to the sender with its greater term and change
 itself to be a candidate trying to become a leader.
 
 \subsubsection{Log Entry}
-A log entry is a pair of operation an term. Operations are sent to the leader 
+A log entry is a pair of operation an term. Operations are sent to the leader
 in log entries from followers. The leader is responsible for receiving the log entries and
-maintaining the consistency of the whole system. 
+maintaining the consistency of the whole system.
 When the leader receives a log entry, the leader asks followers to append the log entry,
 if a majority of followers responds that with the confirmation of the appending,
 the leader then records the very operation to its state machine.
-To make the logs in order, in this phase, a follower can only append a log when 
-its prior log or logs are identical to the leader's log. And a follower can only 
+To make the logs in order, in this phase, a follower can only append a log when
+its prior log or logs are identical to the leader's log. And a follower can only
 respond its confirmation after it recorded the appending to its state machine.
 
 \subsubsection{Leader Failures Handling}
@@ -600,87 +607,79 @@ Despite of the previous similar points for Paxos and Raft, they have different
 strategies to handle leader failures.
 
 For Paxos, a follower becomes a candidate if it failed to receive any message
-from the leader for a specific time. 
-The term of it will be increased to the next such that 
-\textit{term mod n = s} where \textit{term} is the next term, 
-\textit{n} is the count of nodes and \textit{s} is the node id of this candidate. 
+from the leader for a specific time.
+The term of it will be increased to the next such that
+\textit{term mod n = s} where \textit{term} is the next term,
+\textit{n} is the count of nodes and \textit{s} is the node id of this candidate.
 During this election, this candidate has to make sure it has all the previous logs
 before it becomes a leader. Thus, followers that vote for this candidate should respond
 with a election message which also includes all the log entries that the follower
 has after the candidate’s commit index.
 The candidate reviews all the log entries it received, compares them with its own logs.
 If the candidate has a same log, it updates its own log with the new term.
-If the same index has multiple log entries , the candidate uses the 
+If the same index has multiple log entries , the candidate uses the
 greatest and newest term to update the conflict log.
 After all log entries checked, the candidate then can become a leader
 and starts to replicate the log entries to followers.
 
-For Raft, a node will also become a candidate and increases its term 
-if it failed to receive any message from the leader for a specific time. 
+For Raft, a node will also become a candidate and increases its term
+if it failed to receive any message from the leader for a specific time.
 It asks other nodes to vote for with its term.
-Any node receives the request will check 
-if the requested term is greater than that it has locally. 
-If the requested term is greater and this node did not vote for a candidate 
+Any node receives the request will check
+if the requested term is greater than that it has locally.
+If the requested term is greater and this node did not vote for a candidate
 which requested with this term, the node votes for the requested candidate.
-Bacause lo
+After a candidate received confirmations from a majority, it becomes a leader.
+Because log entries of Raft is in order, a node only need to check the last
+log entry which makes the election and the log replication more efficient.
+However, the leader can not record operation using the term which it used
+to election for safety reason.
+As there may be multiple candidates trying to become a leader at the same
+time with the same term, it is possible that no candidate can get votes for a majority.
+If this happens, a new election with a new term will be started by a candidate.
 
 \subsubsection{Summary}
-Overall, Raft is easier to understand and implement, which makes it more commonly used. But in essence, the approach of Paxos and Raft is quite similar, the only difference between them is that the process of election of the leader of raft is simpler. Specifically: (i) When choosing a leader, Paxos divides terms between servers. While in raft, each follower can be a candidate in any term, but each follower can only vote for one candidate, and the candidate with the majority votes will become the leader. (ii) In Paxos, followers can vote to any candidate, 
-
-
-
-
+Overall, Raft is easier to understand and implement, which makes it more commonly used. But in essence, the approach of Paxos and Raft is quite similar, the only difference between them is that the process of election of the leader of raft is simpler. Specifically: (i) When choosing a leader, Paxos divides terms between servers. While in raft, each follower can be a candidate in any term, but each follower can only vote for one candidate, and the candidate with the majority votes will become the leader. (ii) In Paxos, followers can vote to any candidate, even if the log entries in that candidate is not the latest. Whereas follower in Raft only vote for the candidate whose log is at least as up-to-date as that follower's. This ensures the log of the leader
+is as up-to-date as the most of followers' (iii) Since Paxos divides terms between servers, once a leader is elected, in Paxos, the leader will replicate
 
 \section{Paxos Algorithm} \label{sec:paxos}
 
-Draft: What Paxos do we have?
-
-Paxos \cite{lamport2001paxos}, Fast Paxos \cite{fastpaxos}, 
-S-Paxos \cite{spaxos}, 
-OpenReplica \cite{openreplica} and Ring Paxos \cite{ringpaxos}.
-
-\begin{figure}[htp]
-  \centering
-  \includegraphics[width=0.8\textwidth]{img/RingPaxosThroughput.jpg}
-  \caption{Ring Paxos Throughput}
-  \label{fig:RingPaxosThroughput}
-\end{figure}
-
-
-\subsection{Problem}
-In distributed computing, there are processes cooperating with each other. 
-Paxos is designed to achieve consensus which ensures 
-only a single value is chosen from proposed values that 
-proposed by some processes\cite{fischer1983consensus}. 
+In distributed computing, there are processes cooperating with each other.
+Paxos is designed to achieve consensus which ensures
+only a single value is chosen from proposed values that
+proposed by some processes\cite{fischer1983consensus}.
 After been chosen, this value is also available to be learnt by all processes
 when a process can only learn a value that has been chosen.
 
+There are many variants based on Paxos \cite{lamport2001paxos} which includes
+Fast Paxos \cite{fastpaxos}, S-Paxos \cite{spaxos},  OpenReplica \cite{openreplica}
+and Ring Paxos \cite{ringpaxos}.
 
-The following content of this section explains 
-Paxos algorithm based on \cite{fischer1983consensus}. 
-In their work, they make two assumptions, 
-based on that, they then give principles to solve the consensus problem. 
-These principles require a proposing approach 
-of which each proposal has an ordered number \textit{n} 
-and a proposal value \textit{v}. 
-The principles also require three classes of agents 
-which are proposers, acceptors and learners. 
+The following content of this section explains
+Paxos algorithm based on \cite{fischer1983consensus}.
+In their work, they make two assumptions,
+based on that, they then give principles to solve the consensus problem.
+These principles require a proposing approach
+of which each proposal has an ordered number \textit{n}
+and a proposal value \textit{v}.
+The principles also require three classes of agents
+which are proposers, acceptors and learners.
 There are two phases when choosing a value.
-\textit{Phase1} is to \textit{prepare} a proposal 
-by requesting a majority of acceptors. 
+\textit{Phase1} is to \textit{prepare} a proposal
+by requesting a majority of acceptors.
 \textit{Phase2} is to ask the majority to \textit{accept} this proposal.
-In this phase, any acceptor among the majority can 
+In this phase, any acceptor among the majority can
 either accept or decline the \textit{accept} request.
 
 \subsection{Two Assumptions}
 \begin{quote}
   \begin{assumption}{1}{F}\label{as:1}
-    Processes run asynchronously. 
+    Processes run asynchronously.
     They may have arbitrary running speed, may fail and may restart.
   \end{assumption}
   \begin{assumption}{2}{F}\label{as:2}
-    Processes can communicate with each other by message passing. 
-    Messages can take arbitrarily long to be delivered. 
+    Processes can communicate with each other by message passing.
+    Messages can take arbitrarily long to be delivered.
     Messages can be duplicated, can be lost, but can not be corrupted.
   \end{assumption}
 \end{quote}
@@ -690,33 +689,33 @@ The principles are given here and will be applied later,
 \begin{quote}
   P1. An acceptor must accept the first proposal that it receives.
   \begin{quote}
-    a. An acceptor can accept a proposal numbered \textit{n} 
-      iff it has not responded to a \textit{prepare} request 
+    a. An acceptor can accept a proposal numbered \textit{n}
+      iff it has not responded to a \textit{prepare} request
       having a number greater than \textit{n}.
   \end{quote}
-  P2. If a proposal with value \textit{v} is chosen, 
+  P2. If a proposal with value \textit{v} is chosen,
     then every higher-numbered proposal that is chosen has value \textit{v}
     \begin{quote}
-      a. If a proposal with value \textit{v} is chosen, 
-        then every higher-numbered proposal accepted 
+      a. If a proposal with value \textit{v} is chosen,
+        then every higher-numbered proposal accepted
         by any acceptor has value \textit{v}.
-        
-      b. If a proposal with value \textit{v} is chosen, 
-        then every higher-numbered proposal issued 
+
+      b. If a proposal with value \textit{v} is chosen,
+        then every higher-numbered proposal issued
         by any proposer has value \textit{v}.
 
-      c. For any \textit{v} and \textit{n}, 
-        if a proposal with value \textit{v} 
+      c. For any \textit{v} and \textit{n},
+        if a proposal with value \textit{v}
         and number \textit{n} is issued,
-        then there is a set \textit{S} consisting of 
-        a majority of acceptors such that either 
+        then there is a set \textit{S} consisting of
+        a majority of acceptors such that either
           \begin{quote}
-            (i) no acceptor in \textit{S} has accepted 
-              any proposal numbered less than n, or 
-              
-            (ii) \textit{v} is the value of 
-              the highest-numbered proposal among 
-              all proposals numbered less than 
+            (i) no acceptor in \textit{S} has accepted
+              any proposal numbered less than n, or
+
+            (ii) \textit{v} is the value of
+              the highest-numbered proposal among
+              all proposals numbered less than
               \textit{n} accepted by the acceptors in \textit{S}.
           \end{quote}
   \end{quote}
@@ -724,93 +723,93 @@ The principles are given here and will be applied later,
 
 \subsection{Three Agents}
 
-To achieve the consensus, there are three classes of agents 
-which are proposers, acceptors and learners. 
-When a process proposes a proposal, 
+To achieve the consensus, there are three classes of agents
+which are proposers, acceptors and learners.
+When a process proposes a proposal,
 it is included in the class of proposers.
 When a process receive requests from any of the proposers,
 it is then included in the class of acceptors.
-And when a process learn a chosen value, 
+And when a process learn a chosen value,
 it is included in the class of learners.
 These three cases can happen simultaneously, i.e.
-a process can propose, receive requests or 
+a process can propose, receive requests or
 learn a chosen value at the same time.
-Thus the three classes of agents are 
+Thus the three classes of agents are
 not mutually exclusive for a single process.
 
 
 \subsection{Implementation}
 \subsubsection{Choosing A Value}\label{Choosing}
-The Paxos algorithm \cite{lamport1998part} chooses a leader 
-from the processes of assumption \ref{as:2}. 
-This leader is the leader of the class of proposers and 
-also the leader of the class of learners at the same time. 
+The Paxos algorithm \cite{lamport1998part} chooses a leader
+from the processes of assumption \ref{as:2}.
+This leader is the leader of the class of proposers and
+also the leader of the class of learners at the same time.
 A proposal is tagged with an ordered number \textit{n} and a value \textit{v}.
-The proposal will be passed from one proposer to the leader. 
-This leader is in charge of requesting a majority of accepters to ask for 
+The proposal will be passed from one proposer to the leader.
+This leader is in charge of requesting a majority of accepters to ask for
 acceptance.
 The majority can be generated by the algorithm \cite{keidar2001cost}.
 A proposal will be requested two times to finally be chosen.
-At the first time request, named \textit{prepare} request, 
+At the first time request, named \textit{prepare} request,
 an acceptor should respond the proposer leader with a \textit{promise} respond.
-Once get \textit{promise} respond from a majority 
+Once get \textit{promise} respond from a majority
 (this majority could be different from the requested one),
-the proposer leader requests each \textit{promised} acceptor 
-in the majority with an \textit{accept} request 
+the proposer leader requests each \textit{promised} acceptor
+in the majority with an \textit{accept} request
 to confirm the acceptance of this proposal.
-The acceptor which receives this \textit{accept} request 
-will accept this proposal based on $P1^a$. 
+The acceptor which receives this \textit{accept} request
+will accept this proposal based on $P1^a$.
 And no matter it accepts it or not, it should respond the proposer leader to
 confirm their reaction.
-If a proposal was proposed, i.e. a value was chosen, 
+If a proposal was proposed, i.e. a value was chosen,
 then it comes to learn it.
 
 \subsubsection{Learning A Value}
 There are three easy approaches to learn a value.
-The first, in \textit{Phase2}, when acceptors accept a value, 
-they can respond to all the learners. 
+The first, in \textit{Phase2}, when acceptors accept a value,
+they can respond to all the learners.
 This is immediate but requires a response number at
 the product of the number of learners and the number of acceptors.
-The second, accepters now respond only the leader of learners. 
+The second, accepters now respond only the leader of learners.
 However, this is unreliable since we have the assumption\ref{as:2}.
 It brings us to the third way, which is to have a set of leaders of learners
 combining the benefits of the other approaches without lots of message passing.
 
 The three ways above are all passive in the perspective of a learner when
 it is actually be notified what the chosen value is.
-If a learner want a chosen value itself, 
-it can get an another agent to be  a proposer 
-to propose a proposal using the above algorithm. 
+If a learner want a chosen value itself,
+it can get an another agent to be  a proposer
+to propose a proposal using the above algorithm.
 \subsection{Protocol}
-\cite{PaxosMadeSwitch-y} uses UDP to pass messages, 
-they think Paxos does not require reliable communications, 
+\cite{PaxosMadeSwitch-y} uses UDP to pass messages,
+they think Paxos does not require reliable communications,
 so using TCP is unnecessary.
 \subsection{Issues}
-Because of assumption\ref{as:1} and 
-the use of a quorum of acceptors \cite{jalili2014practical}, 
+Because of assumption\ref{as:1} and
+the use of a quorum of acceptors \cite{jalili2014practical},
 with that acceptors handling messages sequentially,
-performance hiccups may occurs when it takes time for slower acceptors 
+performance hiccups may occurs when it takes time for slower acceptors
 to catch up.
 
 
-Paxos has several significant shortcomings. The first one is that it 
-is exceptionally difficult to understand\cite{conf/usenix/OngaroO14}. 
-To describe the Paxos algorithm, Lamport described a parliament on a 
-small island in Greece\cite{lamport1998part}. The original paper is 
-very vague and few people can fully understand it. Although Lamport 
-later published a paper trying to simplify the description of the 
-algorithm\cite{lamport2001paxos}, understanding Paxos is still a big 
-challenge. Another drawback of Paxos is that it does not provide a 
+Paxos has several significant shortcomings. The first one is that it
+is exceptionally difficult to understand\cite{conf/usenix/OngaroO14}.
+To describe the Paxos algorithm, Lamport described a parliament on a
+small island in Greece\cite{lamport1998part}. The original paper is
+very vague and few people can fully understand it. Although Lamport
+later published a paper trying to simplify the description of the
+algorithm\cite{lamport2001paxos}, understanding Paxos is still a big
+challenge. Another drawback of Paxos is that it does not provide a
 good foundation for building practical implementations\cite{conf/usenix/OngaroO14}.
-The description of the algorithm in Lamport's paper is just an 
-algorithm for a single decree. Lamport mentioned the solution to 
-implement Multi-Paxos, but many details are not sufficiently provided, 
-which leads to the existing implementation of Paxos based on the 
+The description of the algorithm in Lamport's paper is just an
+algorithm for a single decree. Lamport mentioned the solution to
+implement Multi-Paxos, but many details are not sufficiently provided,
+which leads to the existing implementation of Paxos based on the
 implementer's own understanding. As a result, practical systems usually
 vary widely.
 
 \subsection{Optimisations}
-To prevent failures described in assumption\ref{as:1}, 
+To prevent failures described in assumption\ref{as:1},
 stable storage is used by both proposers and acceptors.
 The highest-numbered proposal is always stored in a proposer's stable storage.
 The intended response is always stored in an acceptor's stable storage
@@ -897,9 +896,9 @@ There are only two type of RPCs in the Raft algorithm:
   is committed, in addition to the previous rule, at least one new entry from leader's term must also be stored on the majority of servers.
 
 \section{Application and Algorithm Implementation} \label{sec:application}
-We implement a distributed key-value database in Java using the Raft consensus algorithm. Although Paxos is the dominant consensus algorithm in the industry, Raft is selected due to its strong focus on being an understandable algorithm. Further, unlike Paxos, Raft is a \textit{continuous} algorithm which we deem to be more suitable for our application. Although there is a variant of Paxos which is similarly continuous (Multi-Paxos), we find the Raft algorithm to be less complex to implement. 
+We implement a distributed key-value database in Java using the Raft consensus algorithm. Although Paxos is the dominant consensus algorithm in the industry, Raft is selected due to its strong focus on being an understandable algorithm. Further, unlike Paxos, Raft is a \textit{continuous} algorithm which we deem to be more suitable for our application. Although there is a variant of Paxos which is similarly continuous (Multi-Paxos), we find the Raft algorithm to be less complex to implement.
 
-Our key-value database takes the form of a \texttt{HashMap} which is replicated (as opposed to sharded) across all nodes in the cluster. Due to this replication, it is crucial that our system remain consistent over time; key-value pairs should match across different nodes. Hence, we solve the problem with the aid of consensus. 
+Our key-value database takes the form of a \texttt{HashMap} which is replicated (as opposed to sharded) across all nodes in the cluster. Due to this replication, it is crucial that our system remain consistent over time; key-value pairs should match across different nodes. Hence, we solve the problem with the aid of consensus.
 
 \subsection{Architecture}
 All nodes in our system share the same architecture, shown in Figure \ref{fig:aofc}. Communication between nodes is achieved by Java Remote Method Invocation (RMI). Below, we discuss the rationale behind our design decisions.
@@ -919,7 +918,7 @@ We made a conscious decision to make attributes of \texttt{AbstractState} such a
   \label{fig:aofc}
 \end{figure}
 
-\subsection{Operation}
+\subsection{Operational Details}
 The system is made available by starting at least half the nodes in the cluster. All nodes have a configuration file detailing:
 \begin{itemize}
     \item The ID of the node
@@ -932,6 +931,14 @@ The system is made available by starting at least half the nodes in the cluster.
 Upon starting a node, it attempts to connect to all other nodes listed in the configuration file. In the event that it can't connect to a particular node, it tries again periodically for up to 30 seconds before continuing to the normal state of operation. As per the Raft algorithm specification, all nodes start in the follower state. The transition from one state to another is handled by the incumbent state. For instance, should a leader node receive an \texttt{appendEntries} RMI call containing a higher term than its own, its \texttt{state} object (i.e. \texttt{LeaderState} object) will handle cleanup operations (such as ensuring that periodic heartbeats no longer be sent) and instantiate a new \texttt{FollowerState} object, reassigning the \texttt{state} attribute of the \texttt{NodeImpl} object to the newly created object.
 
 During operation, changes made to the log are written to persistent storage. This ensures that upon crashing and recovering, a node can simply read the previous state of the log. Note, however, that this is not a requirement of the algorithm. Indeed, a node in our system can recover successfully even if all previous log entries are lost (e.g. due to storage corruption). Nonetheless, recovery is made more efficient if the log is written to persistent storage, since fewer log entries need to be sent from the leader in order for the recovered node's log (and hence, state machine) to catch up with that of the system.
+
+\section{Future Directions and Application Domains}
+Consensus algorithm that guarantee partition-tolerance and consistency like Paxos and Raft can be applied to application including:
+\begin{itemize}
+    \item Distributed duplicated transaction system.
+    \item Managing leader node for some distributed tasks. For example, Docker Swarm use Raft to make sure all the manager nodes
+    \item Synchronizing replicas in the state machine and ensuring consistency among them.
+\end{itemize}
 
 \bibliographystyle{ieeetr}
 \bibliography{main}
