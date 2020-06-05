@@ -835,7 +835,7 @@ the same as Paxos \cite{conf/usenix/OngaroO14}.
       \centering
       \includegraphics[width=0.8\textwidth]{img/raft-state-diagram.png}
       \caption{Server states}
-      \label{fig:aofc}
+      \label{fig:raft-states}
   \end{figure}
 \subsection{Protocol}
 In the Raft algorithm, time is divided into terms\cite{conf/usenix/OngaroO14}, Each term has a number, and the number increments when a new term starts. Each term starts
@@ -901,7 +901,7 @@ We implement a distributed key-value database in Java using the Raft consensus a
 Our key-value database takes the form of a \texttt{HashMap} which is replicated (as opposed to sharded) across all nodes in the cluster. Due to this replication, it is crucial that our system remain consistent over time; key-value pairs should match across different nodes. Hence, we solve the problem with the aid of consensus.
 
 \subsection{Architecture}
-All nodes in our system share the same architecture, shown in Figure \ref{fig:aofc}. Communication between nodes is achieved by Java Remote Method Invocation (RMI). Below, we discuss the rationale behind our design decisions.
+All nodes in our system share the same architecture, shown in Figure \ref{fig:uml}. Communication between nodes is achieved by Java Remote Method Invocation (RMI). Below, we discuss the rationale behind our design decisions.
 
 \texttt{NodeImpl} is the main class of a node, holding references to a \texttt{RaftLog} object and an object corresponding to the current state of the node (i.e. follower, candidate or leader). The class implements \texttt{INode} (which extends \texttt{Remote}) to be able to receive RMI calls from other nodes---the \texttt{requestVote} method is called by candidate nodes and the \texttt{appendEntries} method is called by the leader. Additionally, the class implements \texttt{IClientInterface} to be able to receive RMI calls from clients.
 
@@ -915,7 +915,7 @@ We made a conscious decision to make attributes of \texttt{AbstractState} such a
   \centering
   \includegraphics[width=1\textwidth]{img/class-diragram.png}
   \caption{Class Diagram}
-  \label{fig:aofc}
+  \label{fig:uml}
 \end{figure}
 
 \subsection{Operational Details}
