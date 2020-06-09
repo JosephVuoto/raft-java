@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+Language: Java
+TabWidth: 4
+UseTab: ForIndentation
+BreakBeforeBraces: Linux
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: false
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 120
+IncludeCategories:
+  - Regex:           '^(<|"(gtest|gmock|isl|json)/)'
+    Priority:        1
+  - Regex:           '.*'
+    Priority:        2

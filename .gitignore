@@ -42,7 +42,6 @@ coverage
 *.aux
 *.glo
 *.idx
-*.log
 *.toc
 *.ist
 *.acn
@@ -68,3 +67,6 @@ coverage
 
 ### Rendered PDF ###
 report/main.pdf
+state1.json
+state2.json
+state3.json

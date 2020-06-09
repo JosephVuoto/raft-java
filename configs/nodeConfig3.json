@@ -1,0 +1,17 @@
+{
+    "nodeId":3,
+    "port":4444,
+    "statePath":"./state3.json",
+    "clusterInfo":[
+        {
+            "nodeId":2,
+            "address":"127.0.0.1",
+            "port":3333
+        },
+        {
+            "nodeId":1,
+            "address":"127.0.0.1",
+            "port":2222
+        }
+    ]
+}
